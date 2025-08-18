@@ -2,9 +2,13 @@
 
 This project is a **Quadratic Equation Solver** made using **vanilla HTML, CSS, and JavaScript**.  
 It allows users to input the coefficients `a`, `b`, and `c` of a quadratic equation in the form:
+
 ax² + bx + c = 0
+
 and get the **solutions** using the quadratic formula:
+
 x = (-b ± √(b² - 4ac)) / (2a)
+
 ---
 
 ## Features
