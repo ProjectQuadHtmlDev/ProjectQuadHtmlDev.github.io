@@ -1,211 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quadratic Graph Tool</title>
-<style>
-:root {
-  --fg:#0f172a;
-  --muted:#475569;
-  --bg:#f8fafc;
-  --card:#ffffff;
-  --accent:#2563eb;
-  --accent-2:#22c55e;
-  --warn:#ef4444;
-}
-* { box-sizing:border-box }
-body {
-  margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Arial, sans-serif;
-  color: var(--fg);
-  background: linear-gradient(180deg, #f0f7ff, #fff);
-}
-header { padding:2rem 1rem; text-align:center }
-h1 { margin:0 0 .25rem; font-size:clamp(1.5rem,2.6vw,2.2rem) }
-.sub { color:var(--muted) }
-.container { max-width:980px; margin:0 auto; padding:1rem }
-.grid { display:grid; grid-template-columns:1fr; gap:1rem }
-@media (min-width: 900px) { .grid { grid-template-columns: 420px 1fr } }
-.card {
-  background:var(--card);
-  border-radius:18px;
-  box-shadow:0 10px 30px rgba(2,6,23,.12);
-  padding:1rem;
-}
-label { font-weight:600; display:block; margin:.5rem 0 .25rem }
-input[type="number"] {
-  width:100%; padding:.7rem;
-  border:1px solid #e2e8f0; border-radius:12px;
-  font-size:1rem; background:#fff;
-}
-input[type="number"]:focus {
-  outline:3px solid rgba(37,99,235,.15); border-color:var(--accent);
-}
-.row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem }
-.btns { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem }
-button {
-  appearance:none; border:0; border-radius:12px;
-  padding:.7rem 1rem; font-weight:700; cursor:pointer;
-}
-.primary { background:var(--accent); color:#fff }
-.secondary { background:#e2e8f0 }
-.ghost { background:transparent; border:2px dashed #e2e8f0 }
-.preview {
-  font-variant-ligatures: none;
-  padding:.75rem 1rem;
-  background:#f8fafc;
-  border:1px dashed #e2e8f0;
-  border-radius:12px;
-  margin-top:.75rem;
-}
-.muted { color:var(--muted) }
-footer { padding:2rem 1rem; text-align:center; color:var(--muted) }
-.small { font-size:.9rem }
-.source-button {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #333;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: background 0.3s ease;
-}
-.source-button:hover { background-color: #555; }
-canvas { width:100%; height:400px; border-radius:12px; background:#f8fafc; border:1px solid #e2e8f0; display:block; margin-top:1rem; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quadratic Explorer (Graphing Tool)</title>
+  <meta name="description" content="Interactive quadratic grapher for y = ax² + bx + c with pan & zoom." />
+
+  <style>
+    :root {
+      --fg:#0f172a; --muted:#475569; --bg:#f8fafc; --card:#ffffff;
+      --accent:#2563eb; --accent-2:#22c55e; --warn:#ef4444;
+    }
+    *{ box-sizing:border-box }
+    body{
+      margin:0; color:var(--fg);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,Inter,Ubuntu,Arial,sans-serif;
+      background:linear-gradient(180deg,#f0f7ff,#fff);
+    }
+    header{ padding:2rem 1rem; text-align:center }
+    h1{ margin:0 0 .25rem; font-size:clamp(1.5rem,2.6vw,2.2rem) }
+    .sub{ color:var(--muted) }
+    .container{ max-width:980px; margin:0 auto; padding:1rem }
+    .grid{ display:grid; grid-template-columns:1fr; gap:1rem }
+    @media (min-width:900px){ .grid{ grid-template-columns:420px 1fr } }
+
+    .card{
+      background:var(--card); border-radius:18px; padding:1rem;
+      box-shadow:0 10px 30px rgba(2,6,23,.12);
+    }
+
+    label{ font-weight:600; display:block; margin:.5rem 0 .25rem }
+    .row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem }
+    .field{ display:grid; gap:.4rem }
+    input[type="number"]{
+      width:100%; padding:.7rem; border:1px solid #e2e8f0; border-radius:12px; background:#fff;
+      font-size:1rem;
+    }
+    input[type="number"]:focus{ outline:3px solid rgba(37,99,235,.15); border-color:var(--accent) }
+
+    .btns{ display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem }
+    button{
+      appearance:none; border:0; border-radius:12px; padding:.7rem 1rem; font-weight:700; cursor:pointer;
+    }
+    .primary{ background:var(--accent); color:#fff }
+    .secondary{ background:#e2e8f0 }
+    .ghost{ background:transparent; border:2px dashed #e2e8f0 }
+
+    .preview{
+      font-variant-ligatures:none; padding:.75rem 1rem; background:#f8fafc;
+      border:1px dashed #e2e8f0; border-radius:12px; margin-top:.75rem;
+    }
+    .small{ font-size:.9rem }
+    .muted{ color:var(--muted) }
+
+    canvas{
+      width:100%; height:520px; display:block; margin-top:.5rem;
+      border-radius:14px; background:#fff; box-shadow:inset 0 0 0 1px #e5e7eb;
+      touch-action:none; /* allow custom pan on touch */
+    }
+    .legend{ display:flex; gap:.75rem; flex-wrap:wrap; margin-top:.5rem; color:#0f172a }
+    .chip{ display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .6rem; border-radius:999px; background:#f1f5f9; font-size:.85rem }
+    .swatch{ width:.85rem; height:.85rem; border-radius:2px; background:#000 }
+
+    footer{ padding:2rem 1rem; text-align:center; color:var(--muted) }
+    .source-button{
+      display:inline-block; margin-top:10px; padding:10px 20px; background:#333; color:#fff;
+      text-decoration:none; border-radius:8px; transition:background .3s ease;
+    }
+    .source-button:hover{ background:#555; }
+
+    /* Back Button (EXACT code you provided) */
+    .back-btn {
+      position: fixed;
+      top: 15px;
+      right: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      text-decoration: none;
+      color: var(--fg);
+      background: var(--card);
+      padding: 6px 14px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .back-btn:hover {
+      background: #f1f5f9;
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
 <body>
+  <!-- BACK BUTTON (copied exactly) -->
+  <a href="https://projectquadhtmldev.github.io/" class="back-btn">&lt;</a>
 
-<header>
-  <h1>Quadratic Graph Tool</h1>
-  <div class="sub">Plot <strong>y = ax² + bx + c</strong> dynamically.</div>
-</header>
+  <header>
+    <h1>Quadratic Explorer</h1>
+    <div class="sub">Interactively graph <strong>y = ax² + bx + c</strong> with pan & zoom like a mini-Desmos.</div>
+  </header>
 
-<div class="container grid">
-  <!-- INPUT CARD -->
-  <section class="card">
-    <h2 style="margin-top:0">Enter coefficients</h2>
-    <div class="row">
-      <div>
-        <label for="a">a</label>
-        <input id="a" type="number" step="any" value="1"/>
+  <div class="container grid">
+    <!-- LEFT: Controls -->
+    <section class="card">
+      <h2 style="margin-top:0">Controls</h2>
+      <div class="row">
+        <div class="field">
+          <label for="a">a</label>
+          <input id="a" type="number" step="any" value="1" />
+        </div>
+        <div class="field">
+          <label for="b">b</label>
+          <input id="b" type="number" step="any" value="0" />
+        </div>
+        <div class="field">
+          <label for="c">c</label>
+          <input id="c" type="number" step="any" value="0" />
+        </div>
       </div>
-      <div>
-        <label for="b">b</label>
-        <input id="b" type="number" step="any" value="-3"/>
+
+      <div class="preview small" id="preview">Equation: y = x²</div>
+
+      <div class="btns">
+        <button class="primary" id="resetBtn">Reset View</button>
+        <button class="secondary" id="exampleBtn">Random Example</button>
+        <button class="ghost" id="centerOriginBtn">Center Origin</button>
       </div>
-      <div>
-        <label for="c">c</label>
-        <input id="c" type="number" step="any" value="2"/>
+
+      <p class="muted small">Tip: Scroll to zoom (cursor-centric). Drag to pan. Edits update the graph live.</p>
+    </section>
+
+    <!-- RIGHT: Graph -->
+    <section class="card">
+      <h2 style="margin-top:0">Graph</h2>
+      <canvas id="graph" aria-label="Quadratic graph canvas"></canvas>
+      <div class="legend small">
+        <span class="chip"><span class="swatch" style="background:#0f172a"></span>Parabola</span>
+        <span class="chip"><span class="swatch" style="background:#e11d48"></span>Axis of symmetry</span>
+        <span class="chip"><span class="swatch" style="background:#22c55e"></span>Vertex</span>
+        <span class="chip"><span class="swatch" style="background:#2563eb"></span>Y-intercept</span>
+        <span class="chip"><span class="swatch" style="background:#7c3aed"></span>Roots</span>
       </div>
-    </div>
-    <div class="preview small" id="preview">Equation: x² - 3x + 2 = 0</div>
+      <div id="facts" class="muted small" style="margin-top:.6rem">
+        Vertex: — • Axis: x = — • Discriminant: — • Roots: —
+      </div>
+    </section>
+  </div>
 
-    <div class="btns">
-      <button class="primary" id="solveBtn">Plot</button>
-      <button class="secondary" id="clearBtn">Clear</button>
-      <button class="ghost" id="exampleBtn" title="Fills common examples">
-        Examples
-      </button>
-    </div>
-  </section>
+  <footer>
+    <div class="small">Made with vanilla HTML, CSS, and JavaScript. <strong>Quadratic Explorer</strong>.</div>
+    <!-- Working Source Code button (opens your GraphingTool repo path) -->
+    <a
+      href="https://github.com/ProjectQuadHtmlDev/ProjectQuadHtmlDev.github.io/tree/main/GraphingTool"
+      class="source-button"
+      target="_blank"
+      rel="noopener"
+    >Source Code</a>
+  </footer>
 
-  <!-- GRAPH CARD -->
-  <section class="card">
-    <h2 style="margin-top:0">Graph</h2>
-    <canvas id="graph"></canvas>
-  </section>
-</div>
+  <script>
+    // ------- helpers -------
+    const $ = s => document.querySelector(s);
 
-<footer>
-  <div class="small">Made with vanilla HTML, CSS, and JavaScript. <strong>Created By RX</strong>.</div>
-  <a href="#" class="source-button">Source Code</a>
-</footer>
+    const fmt = n => {
+      if (!isFinite(n)) return String(n);
+      const a = Math.abs(n);
+      const s = (a<1e-6 || a>1e8) ? n.toExponential(6) : n.toFixed(6);
+      return s.replace(/\.0+$/,'').replace(/(\.[0-9]*?)0+$/,'$1');
+    };
 
-<script>
-// DOM shortcut
-const $ = sel => document.querySelector(sel);
+    const signTerm = (coef, label) => {
+      if (!coef) return '';
+      const s = coef >= 0 ? ' + ' : ' - ';
+      const mag = Math.abs(coef);
+      const magStr = (mag===1 && label) ? '' : fmt(mag);
+      return s + magStr + (label || '');
+    };
 
-// Build equation preview
-const buildEquationPreview = () => {
-  const a = parseFloat($('#a').value) || 0;
-  const b = parseFloat($('#b').value) || 0;
-  const c = parseFloat($('#c').value) || 0;
-  let eq = '';
-  eq += (a===1?'':'') + (a===-1?'-':'') + (a!==0&&a!==1&&a!==-1?a+'':'') + 'x²';
-  eq += (b!==0?((b>0?' + ':' - ')+Math.abs(b)+'x'):'');
-  eq += (c!==0?((c>0?' + ':' - ')+Math.abs(c)):'');
-  eq = eq.trim();
-  if(eq.startsWith('+')) eq = eq.slice(1).trim();
-  if(eq==='') eq='0';
-  $('#preview').textContent = 'Equation: ' + eq + ' = 0';
-}
-['#a','#b','#c'].forEach(id=>$(id).addEventListener('input', buildEquationPreview));
+    // ------- state -------
+    const state = {
+      a: 1, b: 0, c: 0,
+      scale: 60,               // px per unit (zoom)
+      ox: null, oy: null,      // origin (in screen px)
+      dragging: false,
+      lastX: 0, lastY: 0,
+      minScale: 12,
+      maxScale: 800
+    };
 
-// Graphing
-const canvas = $('#graph');
-const ctx = canvas.getContext('2d');
-const plotGraph = () => {
-  const width = canvas.width = canvas.clientWidth;
-  const height = canvas.height = canvas.clientHeight;
-  ctx.clearRect(0,0,width,height);
+    // ------- UI -------
+    ['#a','#b','#c'].forEach(id => {
+      $(id).addEventListener('input', () => {
+        state[$(id).id] = parseFloat($(id).value) || 0;
+        updatePreview();
+        draw();
+      });
+    });
 
-  const a = parseFloat($('#a').value)||0;
-  const b = parseFloat($('#b').value)||0;
-  const c = parseFloat($('#c').value)||0;
+    $('#resetBtn').addEventListener('click', () => {
+      state.a = 1; state.b = 0; state.c = 0;
+      state.scale = 60;
+      fitCanvasHiDPI();
+      centerOrigin();
+      $('#a').value = 1; $('#b').value = 0; $('#c').value = 0;
+      updatePreview(); draw();
+    });
 
-  // Axis settings
-  const scaleX = width/20; // 1 unit = 20px
-  const scaleY = height/20;
-  const originX = width/2;
-  const originY = height/2;
+    $('#exampleBtn').addEventListener('click', () => {
+      const examples = [
+        {a:1,b:-2,c:-3}, {a:-1,b:4,c:-2}, {a:0.5,b:0,c:-4},
+        {a:2,b:5,c:3}, {a:1,b:2,c:1}, {a:1,b:0,c:0}
+      ];
+      const pick = examples[Math.floor(Math.random()*examples.length)];
+      state.a=pick.a; state.b=pick.b; state.c=pick.c;
+      $('#a').value=pick.a; $('#b').value=pick.b; $('#c').value=pick.c;
+      updatePreview(); draw();
+    });
 
-  // Draw axes
-  ctx.strokeStyle = '#ccc';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, originY); ctx.lineTo(width, originY);
-  ctx.moveTo(originX, 0); ctx.lineTo(originX, height);
-  ctx.stroke();
+    $('#centerOriginBtn').addEventListener('click', () => {
+      centerOrigin(); draw();
+    });
 
-  // Draw quadratic
-  ctx.strokeStyle = '#2563eb';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for(let px=0; px<width; px++){
-    const x = (px - originX)/scaleX;
-    const y = a*x*x + b*x + c;
-    const py = originY - y*scaleY;
-    if(px===0) ctx.moveTo(px,py);
-    else ctx.lineTo(px,py);
-  }
-  ctx.stroke();
-}
+    const updatePreview = () => {
+      const {a,b,c} = state;
+      let eq = 'y = ';
+      if (a === 1) eq += 'x²';
+      else if (a === -1) eq += '-x²';
+      else eq += fmt(a) + 'x²';
+      eq += signTerm(b, 'x');
+      eq += signTerm(c, '');
+      $('#preview').textContent = eq.replace('=  +','=').replace('y =  +','y = ');
+    };
 
-// Button events
-$('#solveBtn').addEventListener('click', plotGraph);
-$('#clearBtn').addEventListener('click', ()=>{
-  ['#a','#b','#c'].forEach(id=>$(id).value='');
-  buildEquationPreview();
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-});
-$('#exampleBtn').addEventListener('click', ()=>{
-  const examples = [
-    {a:1,b:-3,c:2},
-    {a:1,b:2,c:1},
-    {a:2,b:5,c:3},
-    {a:1,b:1,c:1},
-    {a:0,b:4,c:-8}
-  ];
-  const pick = examples[Math.floor(Math.random()*examples.length)];
-  $('#a').value=pick.a; $('#b').value=pick.b; $('#c').value=pick.c;
-  buildEquationPreview();
-  plotGraph();
-});
+    // ------- canvas & coords -------
+    const canvas = $('#graph');
+    const ctx = canvas.getContext('2d');
 
-buildEquationPreview();
-</script>
+    function fitCanvasHiDPI(){
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+
+    function centerOrigin(){
+      const rect = canvas.getBoundingClientRect();
+      state.ox = rect.width/2;
+      state.oy = rect.height/2;
+    }
+
+    function worldToScreen(x,y){
+      return [state.ox + x*state.scale, state.oy - y*state.scale];
+    }
+
+    function screenToWorld(sx,sy){
+      return [(sx - state.ox)/state.scale, -(sy - state.oy)/state.scale];
+    }
+
+    // ------- grid helpers -------
+    function niceStep(desiredUnit){
+      const exp = Math.floor(Math.log10(desiredUnit));
+      const f = desiredUnit / Math.pow(10, exp);
+      let nf = 1;
+      if (f < 1.5) nf = 1;
+      else if (f < 3) nf = 2;
+      else if (f < 7) nf = 5;
+      else nf = 10;
+      return nf * Math.pow(10, exp);
+    }
+
+    function drawGrid(){
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+
+      // choose steps so major grid is ~80px
+      const targetPx = 80;
+      const majorUnit = niceStep(targetPx / state.scale);
+      const minorUnit = majorUnit / 5;
+
+      // bounds (world)
+      const [xmin, ymin] = screenToWorld(0, h);
+      const [xmax, ymax] = screenToWorld(w, 0);
+
+      // fill bg
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,w,h);
+
+      // minor lines
+      ctx.strokeStyle = '#eef2f7';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x = Math.ceil(xmin/minorUnit)*minorUnit; x <= xmax; x += minorUnit){
+        const sx = worldToScreen(x,0)[0];
+        ctx.moveTo(sx,0); ctx.lineTo(sx,h);
+      }
+      for (let y = Math.ceil(ymin/minorUnit)*minorUnit; y <= ymax; y += minorUnit){
+        const sy = worldToScreen(0,y)[1];
+        ctx.moveTo(0,sy); ctx.lineTo(w,sy);
+      }
+      ctx.stroke();
+
+      // major lines
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      for (let x = Math.ceil(xmin/majorUnit)*majorUnit; x <= xmax; x += majorUnit){
+        const sx = worldToScreen(x,0)[0];
+        ctx.moveTo(sx,0); ctx.lineTo(sx,h);
+      }
+      for (let y = Math.ceil(ymin/majorUnit)*majorUnit; y <= ymax; y += majorUnit){
+        const sy = worldToScreen(0,y)[1];
+        ctx.moveTo(0,sy); ctx.lineTo(w,sy);
+      }
+      ctx.stroke();
+
+      // axes
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      const xAxisY = worldToScreen(0,0)[1];
+      const yAxisX = worldToScreen(0,0)[0];
+      ctx.moveTo(0, xAxisY); ctx.lineTo(w, xAxisY);
+      ctx.moveTo(yAxisX, 0); ctx.lineTo(yAxisX, h);
+      ctx.stroke();
+
+      // tick labels (major only)
+      ctx.fillStyle = '#64748b';
+      ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (let x = Math.ceil(xmin/majorUnit)*majorUnit; x <= xmax; x += majorUnit){
+        if (Math.abs(x) < 1e-12) continue;
+        const [sx, sy] = worldToScreen(x,0);
+        ctx.fillText(fmt(x), sx, xAxisY + 4);
+      }
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let y = Math.ceil(ymin/majorUnit)*majorUnit; y <= ymax; y += majorUnit){
+        if (Math.abs(y) < 1e-12) continue;
+        const [sx, sy] = worldToScreen(0,y);
+        ctx.fillText(fmt(y), yAxisX - 6, sy);
+      }
+    }
+
+    function drawParabola(){
+      const {a,b,c} = state;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+
+      const f = x => a*x*x + b*x + c;
+
+      // sample adaptively by screen step (2px)
+      ctx.beginPath();
+      let first = true;
+      for (let px = 0; px <= w; px += 2){
+        const [x, y] = screenToWorld(px, 0); // get x at this screen column
+        const yv = f(x);
+        const sy = worldToScreen(0, yv)[1];
+        if (first){ ctx.moveTo(px, sy); first = false; }
+        else ctx.lineTo(px, sy);
+      }
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // features
+      const xv = -b/(2*a);
+      const yv = f(xv);
+      const D = b*b - 4*a*c;
+
+      // axis of symmetry
+      if (isFinite(xv)){
+        const [sxTop, syTop] = worldToScreen(xv, 1e6);
+        const [sxBot, syBot] = worldToScreen(xv, -1e6);
+        ctx.setLineDash([6,6]);
+        ctx.strokeStyle = '#e11d48';
+        ctx.beginPath(); ctx.moveTo(sxTop, syTop); ctx.lineTo(sxBot, syBot); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // vertex
+      drawPoint(xv, yv, '#22c55e');
+
+      // y-intercept (0,c)
+      drawPoint(0, c, '#2563eb');
+
+      // roots
+      let rootText = 'none (complex)';
+      if (D > 1e-12){
+        const r1 = (-b + Math.sqrt(D)) / (2*a);
+        const r2 = (-b - Math.sqrt(D)) / (2*a);
+        drawPoint(r1, 0, '#7c3aed');
+        drawPoint(r2, 0, '#7c3aed');
+        rootText = `x₁=${fmt(r1)}, x₂=${fmt(r2)}`;
+      } else if (Math.abs(D) <= 1e-12){
+        const r = (-b)/(2*a);
+        drawPoint(r, 0, '#7c3aed');
+        rootText = `x=${fmt(r)} (double)`;
+      }
+
+      $('#facts').textContent =
+        `Vertex: (${fmt(xv)}, ${fmt(yv)}) • Axis: x = ${fmt(xv)} • Discriminant: ${fmt(D)} • Roots: ${rootText}`;
+    }
+
+    function drawPoint(x,y,color){
+      const [sx, sy] = worldToScreen(x,y);
+      ctx.beginPath(); ctx.arc(sx, sy, 4, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+    }
+
+    function draw(){
+      drawGrid();
+      drawParabola();
+    }
+
+    // ------- interactions (pan/zoom like Desmos) -------
+    function onWheel(e){
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      const before = screenToWorld(mx, my);
+      const zoom = Math.pow(1.1, -e.deltaY/100); // smooth zoom
+      const newScale = Math.min(state.maxScale, Math.max(state.minScale, state.scale * zoom));
+      const scaleChange = newScale / state.scale;
+      state.scale = newScale;
+
+      // keep world point under cursor fixed
+      state.ox = mx - before[0] * state.scale;
+      state.oy = my + before[1] * state.scale;
+
+      draw();
+    }
+
+    function onDown(e){
+      e.preventDefault();
+      state.dragging = true;
+      const {x,y} = pointerPos(e);
+      state.lastX = x; state.lastY = y;
+    }
+    function onMove(e){
+      if(!state.dragging) return;
+      const {x,y} = pointerPos(e);
+      const dx = x - state.lastX;
+      const dy = y - state.lastY;
+      state.ox += dx;
+      state.oy += dy;
+      state.lastX = x; state.lastY = y;
+      draw();
+    }
+    function onUp(){ state.dragging = false; }
+
+    function pointerPos(e){
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches && e.touches[0]){
+        return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+      }
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    // ------- init -------
+    function init(){
+      fitCanvasHiDPI();
+      if (state.ox === null) centerOrigin();
+      updatePreview();
+      draw();
+    }
+
+    // events
+    window.addEventListener('resize', () => { fitCanvasHiDPI(); draw(); });
+    canvas.addEventListener('wheel', onWheel, { passive:false });
+    canvas.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    // touch
+    canvas.addEventListener('touchstart', onDown, { passive:false });
+    canvas.addEventListener('touchmove', onMove, { passive:false });
+    canvas.addEventListener('touchend', onUp);
+
+    init();
+  </script>
 </body>
 </html>
