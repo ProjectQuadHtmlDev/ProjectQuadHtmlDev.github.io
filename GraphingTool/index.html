@@ -1,276 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quadratic Explorer (Graphing Tool)</title>
-  <meta name="description" content="Interactive quadratic grapher for y = ax² + bx + c with inequality shading." />
-
-  <style>
-    :root {
-      --fg:#0f172a; --muted:#475569; --bg:#f8fafc; --card:#ffffff;
-      --accent:#2563eb; --accent-2:#22c55e; --warn:#ef4444;
-    }
-    *{box-sizing:border-box}
-    body {
-      margin:0; color:var(--fg);
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Arial,sans-serif;
-      background:linear-gradient(180deg,#f0f7ff,#fff);
-    }
-    header{padding:2rem 1rem; text-align:center}
-    h1{margin:0 0 .25rem; font-size:clamp(1.5rem,2.6vw,2.2rem)}
-    .sub{color:var(--muted)}
-    .container{max-width:980px; margin:0 auto; padding:1rem}
-    .grid{display:grid; grid-template-columns:1fr; gap:1rem}
-    @media (min-width:900px){ .grid{grid-template-columns:420px 1fr} }
-    .card {
-      background:var(--card); border-radius:18px; padding:1rem;
-      box-shadow:0 10px 30px rgba(2,6,23,.12);
-    }
-    label{font-weight:600; display:block; margin:.5rem 0 .25rem}
-    .row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem}
-    .field{display:grid; gap:.4rem}
-    input[type="number"], select {
-      width:100%; padding:.7rem; border:1px solid #e2e8f0; border-radius:12px; background:#fff;
-    }
-    input[type="number"]:focus, select:focus{outline:3px solid rgba(37,99,235,.15); border-color:var(--accent)}
-    input[type="range"]{width:100%}
-
-    .btns{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem}
-    button {
-      appearance:none; border:0; border-radius:12px; padding:.7rem 1rem; font-weight:700; cursor:pointer;
-    }
-    .primary{background:var(--accent); color:#fff}
-    .secondary{background:#e2e8f0}
-    .ghost{background:transparent; border:2px dashed #e2e8f0}
-    .preview{
-      font-variant-ligatures:none; padding:.75rem 1rem; background:#f8fafc;
-      border:1px dashed #e2e8f0; border-radius:12px; margin-top:.75rem;
-    }
-    .small{font-size:.9rem}
-    .muted{color:var(--muted)}
-    .badge{display:inline-block; font-size:.8rem; padding:.2rem .55rem; border-radius:999px; background:#e0f2fe; color:#0369a1; margin-left:.25rem}
-
-    canvas{width:100%; height:480px; display:block; border-radius:14px; background:#fff; box-shadow:inset 0 0 0 1px #e5e7eb}
-    .legend{display:flex; gap:.75rem; flex-wrap:wrap; margin-top:.5rem; color:#0f172a}
-    .chip{display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .6rem; border-radius:999px; background:#f1f5f9; font-size:.85rem}
-    .swatch{width:.85rem; height:.85rem; border-radius:2px; background:#000}
-
-    footer{padding:2rem 1rem; text-align:center; color:var(--muted)}
-    .back-btn {
-      position:fixed; top:15px; left:20px; font-size:22px; font-weight:bold; text-decoration:none;
-      color:var(--fg); background:var(--card); padding:6px 14px; border-radius:10px;
-      box-shadow:0 2px 6px rgba(0,0,0,.15); transition:background .3s ease, transform .2s ease;
-    }
-    .back-btn:hover{background:#f1f5f9; transform:translateY(-2px)}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quadratic Graph Tool</title>
+<style>
+:root {
+  --fg:#0f172a;
+  --muted:#475569;
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --accent:#2563eb;
+  --accent-2:#22c55e;
+  --warn:#ef4444;
+}
+* { box-sizing:border-box }
+body {
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Arial, sans-serif;
+  color: var(--fg);
+  background: linear-gradient(180deg, #f0f7ff, #fff);
+}
+header { padding:2rem 1rem; text-align:center }
+h1 { margin:0 0 .25rem; font-size:clamp(1.5rem,2.6vw,2.2rem) }
+.sub { color:var(--muted) }
+.container { max-width:980px; margin:0 auto; padding:1rem }
+.grid { display:grid; grid-template-columns:1fr; gap:1rem }
+@media (min-width: 900px) { .grid { grid-template-columns: 420px 1fr } }
+.card {
+  background:var(--card);
+  border-radius:18px;
+  box-shadow:0 10px 30px rgba(2,6,23,.12);
+  padding:1rem;
+}
+label { font-weight:600; display:block; margin:.5rem 0 .25rem }
+input[type="number"] {
+  width:100%; padding:.7rem;
+  border:1px solid #e2e8f0; border-radius:12px;
+  font-size:1rem; background:#fff;
+}
+input[type="number"]:focus {
+  outline:3px solid rgba(37,99,235,.15); border-color:var(--accent);
+}
+.row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem }
+.btns { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem }
+button {
+  appearance:none; border:0; border-radius:12px;
+  padding:.7rem 1rem; font-weight:700; cursor:pointer;
+}
+.primary { background:var(--accent); color:#fff }
+.secondary { background:#e2e8f0 }
+.ghost { background:transparent; border:2px dashed #e2e8f0 }
+.preview {
+  font-variant-ligatures: none;
+  padding:.75rem 1rem;
+  background:#f8fafc;
+  border:1px dashed #e2e8f0;
+  border-radius:12px;
+  margin-top:.75rem;
+}
+.muted { color:var(--muted) }
+footer { padding:2rem 1rem; text-align:center; color:var(--muted) }
+.small { font-size:.9rem }
+.source-button {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #333;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+.source-button:hover { background-color: #555; }
+canvas { width:100%; height:400px; border-radius:12px; background:#f8fafc; border:1px solid #e2e8f0; display:block; margin-top:1rem; }
+</style>
 </head>
-
 <body>
-  <!-- Back button -->
-  <a href="https://projectquadhtmldev.github.io/" class="back-btn" title="Back">&lt;</a>
 
-  <header>
-    <h1>Quadratic Explorer</h1>
-    <div class="sub">Interactively graph <strong>y = ax² + bx + c</strong>, visualize inequalities, and see key features.</div>
-  </header>
+<header>
+  <h1>Quadratic Graph Tool</h1>
+  <div class="sub">Plot <strong>y = ax² + bx + c</strong> dynamically.</div>
+</header>
 
-  <div class="container grid">
-    <!-- LEFT -->
-    <section class="card">
-      <h2 style="margin-top:0">Controls</h2>
-      <div class="row">
-        <div class="field">
-          <label for="aNum">a</label>
-          <input id="aNum" type="number" step="0.1" value="1" />
-          <input id="aRange" type="range" min="-5" max="5" step="0.1" value="1" />
-        </div>
-        <div class="field">
-          <label for="bNum">b</label>
-          <input id="bNum" type="number" step="0.1" value="0" />
-          <input id="bRange" type="range" min="-10" max="10" step="0.1" value="0" />
-        </div>
-        <div class="field">
-          <label for="cNum">c</label>
-          <input id="cNum" type="number" step="0.1" value="0" />
-          <input id="cRange" type="range" min="-10" max="10" step="0.1" value="0" />
-        </div>
+<div class="container grid">
+  <!-- INPUT CARD -->
+  <section class="card">
+    <h2 style="margin-top:0">Enter coefficients</h2>
+    <div class="row">
+      <div>
+        <label for="a">a</label>
+        <input id="a" type="number" step="any" value="1"/>
       </div>
-
-      <div class="row" style="margin-top:.75rem">
-        <div>
-          <label for="ineq">Inequality</label>
-          <select id="ineq">
-            <option value="none">None (y = …)</option>
-            <option value="lt">Shade Below (y &lt; …)</option>
-            <option value="gt">Shade Above (y &gt; …)</option>
-          </select>
-        </div>
-        <div>
-          <label for="zoom">Zoom (±)</label>
-          <input id="zoom" type="range" min="6" max="22" step="1" value="12" />
-        </div>
-        <div>
-          <label>&nbsp;</label>
-          <div class="btns" style="margin:0">
-            <button class="secondary" id="resetBtn">Reset</button>
-          </div>
-        </div>
+      <div>
+        <label for="b">b</label>
+        <input id="b" type="number" step="any" value="-3"/>
       </div>
-
-      <div class="preview small" id="preview">Equation: y = x²</div>
-      <div class="btns">
-        <button class="primary" id="randBtn">Random Example</button>
-        <button class="ghost" id="animateBtn">Animate a ↻</button>
+      <div>
+        <label for="c">c</label>
+        <input id="c" type="number" step="any" value="2"/>
       </div>
-      <p class="muted small">
-        Tips: Larger |a| makes the parabola narrower. b shifts the vertex left/right. c is the y-intercept.
-      </p>
-    </section>
-
-    <!-- RIGHT -->
-    <section class="card">
-      <h2 style="margin-top:0">Graph</h2>
-      <canvas id="graph" width="900" height="540"></canvas>
-      <div class="legend small">
-        <span class="chip"><span class="swatch" style="background:#0f172a"></span>Parabola</span>
-        <span class="chip"><span class="swatch" style="background:#e11d48"></span>Axis of symmetry</span>
-        <span class="chip"><span class="swatch" style="background:#22c55e"></span>Vertex</span>
-        <span class="chip"><span class="swatch" style="background:#2563eb"></span>Y-intercept</span>
-        <span class="chip"><span class="swatch" style="background:#7c3aed"></span>Roots</span>
-      </div>
-      <div id="facts" class="muted small" style="margin-top:.6rem">
-        Vertex: — • Axis: x = — • Discriminant: — • Roots: —
-      </div>
-    </section>
-  </div>
-
-  <footer>
-    <div class="small">Made with vanilla HTML, CSS, and JavaScript. <strong>Quadratic Explorer</strong>.</div>
-    <div style="margin-top:1rem">
-      <a href="https://github.com/ProjectQuadHtmlDev/ProjectQuadHtmlDev.github.io/tree/main/GraphingTool" target="_blank">
-        <button class="secondary">Source Code</button>
-      </a>
     </div>
-  </footer>
+    <div class="preview small" id="preview">Equation: x² - 3x + 2 = 0</div>
 
-  <script>
-    const $ = s => document.querySelector(s);
-    const fmt = n => {
-      if (!isFinite(n)) return String(n);
-      const a = Math.abs(n);
-      const s = (a<1e-4 || a>1e6) ? n.toExponential(4) : n.toFixed(4);
-      return s.replace(/\.0+$/,'').replace(/(\.[0-9]*?)0+$/,'$1');
-    };
+    <div class="btns">
+      <button class="primary" id="solveBtn">Plot</button>
+      <button class="secondary" id="clearBtn">Clear</button>
+      <button class="ghost" id="exampleBtn" title="Fills common examples">
+        Examples
+      </button>
+    </div>
+  </section>
 
-    const state = { a:1, b:0, c:0, zoom:12, ineq:'none', anim:false, t:0 };
+  <!-- GRAPH CARD -->
+  <section class="card">
+    <h2 style="margin-top:0">Graph</h2>
+    <canvas id="graph"></canvas>
+  </section>
+</div>
 
-    function link(num, range, key){
-      const numEl = $(num), rangeEl = $(range);
-      const set = v => { state[key] = parseFloat(v); numEl.value = v; rangeEl.value = v; refresh(); };
-      numEl.addEventListener('input', e => set(e.target.value));
-      rangeEl.addEventListener('input', e => set(e.target.value));
-      set(rangeEl.value);
-    }
-    link('#aNum','#aRange','a');
-    link('#bNum','#bRange','b');
-    link('#cNum','#cRange','c');
+<footer>
+  <div class="small">Made with vanilla HTML, CSS, and JavaScript. <strong>Created By RX</strong>.</div>
+  <a href="#" class="source-button">Source Code</a>
+</footer>
 
-    $('#zoom').addEventListener('input', e => { state.zoom = parseInt(e.target.value,10); refresh(); });
-    $('#ineq').addEventListener('change', e => { state.ineq = e.target.value; refresh(); });
+<script>
+// DOM shortcut
+const $ = sel => document.querySelector(sel);
 
-    $('#resetBtn').addEventListener('click', () => {
-      state.a=1; state.b=0; state.c=0; state.zoom=12; state.ineq='none';
-      $('#aNum').value=1; $('#aRange').value=1;
-      $('#bNum').value=0; $('#bRange').value=0;
-      $('#cNum').value=0; $('#cRange').value=0;
-      $('#zoom').value=12; $('#ineq').value='none';
-      refresh();
-    });
+// Build equation preview
+const buildEquationPreview = () => {
+  const a = parseFloat($('#a').value) || 0;
+  const b = parseFloat($('#b').value) || 0;
+  const c = parseFloat($('#c').value) || 0;
+  let eq = '';
+  eq += (a===1?'':'') + (a===-1?'-':'') + (a!==0&&a!==1&&a!==-1?a+'':'') + 'x²';
+  eq += (b!==0?((b>0?' + ':' - ')+Math.abs(b)+'x'):'');
+  eq += (c!==0?((c>0?' + ':' - ')+Math.abs(c)):'');
+  eq = eq.trim();
+  if(eq.startsWith('+')) eq = eq.slice(1).trim();
+  if(eq==='') eq='0';
+  $('#preview').textContent = 'Equation: ' + eq + ' = 0';
+}
+['#a','#b','#c'].forEach(id=>$(id).addEventListener('input', buildEquationPreview));
 
-    $('#randBtn').addEventListener('click', () => {
-      const pick=[{a:1,b:-2,c:-3},{a:-1,b:4,c:-2},{a:0.5,b:0,c:-4},{a:2,b:5,c:3},{a:1,b:2,c:1},{a:1,b:0,c:0}][Math.floor(Math.random()*6)];
-      state.a=pick.a; state.b=pick.b; state.c=pick.c;
-      $('#aNum').value=pick.a; $('#aRange').value=pick.a;
-      $('#bNum').value=pick.b; $('#bRange').value=pick.b;
-      $('#cNum').value=pick.c; $('#cRange').value=pick.c;
-      refresh();
-    });
+// Graphing
+const canvas = $('#graph');
+const ctx = canvas.getContext('2d');
+const plotGraph = () => {
+  const width = canvas.width = canvas.clientWidth;
+  const height = canvas.height = canvas.clientHeight;
+  ctx.clearRect(0,0,width,height);
 
-    $('#animateBtn').addEventListener('click', () => {
-      state.anim=!state.anim;
-      $('#animateBtn').textContent = state.anim?'Stop':'Animate a ↻';
-      if(state.anim) requestAnimationFrame(tick);
-    });
+  const a = parseFloat($('#a').value)||0;
+  const b = parseFloat($('#b').value)||0;
+  const c = parseFloat($('#c').value)||0;
 
-    const canvas=$('#graph'); const ctx=canvas.getContext('2d');
+  // Axis settings
+  const scaleX = width/20; // 1 unit = 20px
+  const scaleY = height/20;
+  const originX = width/2;
+  const originY = height/2;
 
-    function setPixelRatio(){
-      const dpr=window.devicePixelRatio||1;
-      const rect=canvas.getBoundingClientRect();
-      canvas.width=Math.round(rect.width*dpr);
-      canvas.height=Math.round(rect.height*dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-    }
-    window.addEventListener('resize', ()=>{setPixelRatio(); refresh();});
-    setPixelRatio();
+  // Draw axes
+  ctx.strokeStyle = '#ccc';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, originY); ctx.lineTo(width, originY);
+  ctx.moveTo(originX, 0); ctx.lineTo(originX, height);
+  ctx.stroke();
 
-    function worldToScreen(x,y,scale,ox,oy){ return [ox + x*scale, oy - y*scale]; }
+  // Draw quadratic
+  ctx.strokeStyle = '#2563eb';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for(let px=0; px<width; px++){
+    const x = (px - originX)/scaleX;
+    const y = a*x*x + b*x + c;
+    const py = originY - y*scaleY;
+    if(px===0) ctx.moveTo(px,py);
+    else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+}
 
-    function draw(){
-      const {a,b,c,zoom,ineq}=state;
-      const scale=zoom*10;
-      const ox=canvas.clientWidth/2, oy=canvas.clientHeight/2;
-      ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+// Button events
+$('#solveBtn').addEventListener('click', plotGraph);
+$('#clearBtn').addEventListener('click', ()=>{
+  ['#a','#b','#c'].forEach(id=>$(id).value='');
+  buildEquationPreview();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+});
+$('#exampleBtn').addEventListener('click', ()=>{
+  const examples = [
+    {a:1,b:-3,c:2},
+    {a:1,b:2,c:1},
+    {a:2,b:5,c:3},
+    {a:1,b:1,c:1},
+    {a:0,b:4,c:-8}
+  ];
+  const pick = examples[Math.floor(Math.random()*examples.length)];
+  $('#a').value=pick.a; $('#b').value=pick.b; $('#c').value=pick.c;
+  buildEquationPreview();
+  plotGraph();
+});
 
-      // axes
-      ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(0,oy); ctx.lineTo(canvas.clientWidth,oy);
-      ctx.moveTo(ox,0); ctx.lineTo(ox,canvas.clientHeight); ctx.stroke();
-
-      const f=x=>a*x*x+b*x+c;
-
-      // parabola smoother
-      ctx.beginPath();
-      const minX=-(ox/scale)-2, maxX=((canvas.clientWidth-ox)/scale)+2;
-      const stepX=1/scale*1.2;
-      for(let x=minX;x<=maxX;x+=stepX){
-        const y=f(x); const [sx,sy]=worldToScreen(x,y,scale,ox,oy);
-        if(x===minX) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
-      }
-      ctx.strokeStyle='#0f172a'; ctx.lineWidth=2; ctx.stroke();
-
-      // vertex & roots
-      const xv=-b/(2*a), yv=f(xv);
-      drawPoint(xv,yv,'#22c55e');
-      drawPoint(0,c,'#2563eb');
-
-      const D=b*b-4*a*c; let rootText='none';
-      if(D>0){ const r1=(-b+Math.sqrt(D))/(2*a), r2=(-b-Math.sqrt(D))/(2*a);
-        drawPoint(r1,0,'#7c3aed'); drawPoint(r2,0,'#7c3aed');
-        rootText=`x₁=${fmt(r1)}, x₂=${fmt(r2)}`;
-      } else if(Math.abs(D)<1e-12){
-        const r=-b/(2*a); drawPoint(r,0,'#7c3aed'); rootText=`x=${fmt(r)} (double)`;
-      }
-
-      $('#facts').textContent=`Vertex: (${fmt(xv)}, ${fmt(yv)}) • Axis: x=${fmt(xv)} • Discriminant: ${fmt(D)} • Roots: ${rootText}`;
-      $('#preview').textContent=`Equation: y = ${coefStr(a,'x²')}${signTerm(b,'x')}${signTerm(c,'')}`.replace(/^y = \s*\+\s*/,'y = ');
-
-      function drawPoint(x,y,color){
-        const [sx,sy]=worldToScreen(x,y,scale,ox,oy);
-        ctx.beginPath(); ctx.arc(sx,sy,4,0,Math.PI*2);
-        ctx.fillStyle=color; ctx.fill();
-      }
-    }
-
-    function signTerm(coef,label){ if(!coef) return ''; const s=coef>=0?' + ':' - '; const mag=Math.abs(coef); const magStr=(mag===1&&label)?'':fmt(mag); return s+magStr+(label||''); }
-    const coefStr=(v,l)=> (v===1?l:v===-1?'-'+l:fmt(v)+(l?l:''));
-
-    function refresh(){draw();}
-
-    function tick(){ if(!state.anim)return; state.t+=0.016; const base=parseFloat($('#aRange').value); const wobble=Math.sin(state.t)*0.8; const v=Math.max(-5,Math.min(5,base+wobble)); state.a=v; $('#aNum').value=v.toFixed(2); $('#aRange').value=v; refresh(); requestAnimationFrame(tick); }
-
-    refresh();
-  </script>
+buildEquationPreview();
+</script>
 </body>
 </html>
