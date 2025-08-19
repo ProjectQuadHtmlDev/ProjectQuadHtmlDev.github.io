@@ -1,1 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quadratic Explorer (Graphing Tool)</title>
+  <meta name="description" content="Interactive quadratic grapher for y = ax² + bx + c with inequality shading." />
 
+  <style>
+    :root{
+      --fg:#0f172a; --muted:#475569; --bg:#f8fafc; --card:#ffffff;
+      --accent:#2563eb; --accent-2:#22c55e; --warn:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Arial, sans-serif;
+      background:linear-gradient(180deg,#f0f7ff,#fff);
+    }
+    header{padding:2rem 1rem; text-align:center}
+    h1{margin:0 0 .25rem; font-size:clamp(1.5rem,2.6vw,2.2rem)}
+    .sub{color:var(--muted)}
+    .container{max-width:980px; margin:0 auto; padding:1rem}
+    .grid{display:grid; grid-template-columns:1fr; gap:1rem}
+    @media (min-width:900px){ .grid{grid-template-columns:420px 1fr} }
+    .card{
+      background:var(--card); border-radius:18px; padding:1rem;
+      box-shadow:0 10px 30px rgba(2,6,23,.12);
+    }
+
+    label{font-weight:600; display:block; margin:.5rem 0 .25rem}
+    .row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem}
+    .field{display:grid; gap:.4rem}
+    input[type="number"], select{
+      width:100%; padding:.7rem; border:1px solid #e2e8f0; border-radius:12px; background:#fff;
+    }
+    input[type="number"]:focus, select:focus{outline:3px solid rgba(37,99,235,.15); border-color:var(--accent)}
+    input[type="range"]{width:100%}
+
+    .btns{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem}
+    button{
+      appearance:none; border:0; border-radius:12px; padding:.7rem 1rem; font-weight:700; cursor:pointer;
+    }
+    .primary{background:var(--accent); color:#fff}
+    .secondary{background:#e2e8f0}
+    .ghost{background:transparent; border:2px dashed #e2e8f0}
+    .preview{
+      font-variant-ligatures:none; padding:.75rem 1rem; background:#f8fafc;
+      border:1px dashed #e2e8f0; border-radius:12px; margin-top:.75rem;
+    }
+    .small{font-size:.9rem}
+    .muted{color:var(--muted)}
+    .badge{display:inline-block; font-size:.8rem; padding:.2rem .55rem; border-radius:999px; background:#e0f2fe; color:#0369a1; margin-left:.25rem}
+
+    canvas{width:100%; height:480px; display:block; border-radius:14px; background:#fff; box-shadow:inset 0 0 0 1px #e5e7eb}
+    .legend{display:flex; gap:.75rem; flex-wrap:wrap; margin-top:.5rem; color:#0f172a}
+    .chip{display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .6rem; border-radius:999px; background:#f1f5f9; font-size:.85rem}
+    .swatch{width:.85rem; height:.85rem; border-radius:2px; background:#000}
+
+    footer{padding:2rem 1rem; text-align:center; color:var(--muted)}
+    .back-btn{
+      position:fixed; top:15px; right:20px; font-size:22px; font-weight:bold; text-decoration:none;
+      color:var(--fg); background:var(--card); padding:6px 14px; border-radius:10px;
+      box-shadow:0 2px 6px rgba(0,0,0,.15); transition:background .3s ease, transform .2s ease;
+    }
+    .back-btn:hover{background:#f1f5f9; transform:translateY(-2px)}
+  </style>
+</head>
+<body>
+  <!-- Optional back button -->
+  <a href="#" class="back-btn" title="Back">&lt;</a>
+
+  <header>
+    <h1>Quadratic Explorer</h1>
+    <div class="sub">Interactively graph <strong>y = ax² + bx + c</strong>, visualize inequalities, and see key features.</div>
+  </header>
+
+  <div class="container grid">
+    <!-- LEFT: Controls -->
+    <section class="card">
+      <h2 style="margin-top:0">Controls</h2>
+
+      <!-- a, b, c -->
+      <div class="row">
+        <div class="field">
+          <label for="aNum">a</label>
+          <input id="aNum" type="number" step="0.1" value="1" />
+          <input id="aRange" type="range" min="-5" max="5" step="0.1" value="1" />
+        </div>
+        <div class="field">
+          <label for="bNum">b</label>
+          <input id="bNum" type="number" step="0.1" value="0" />
+          <input id="bRange" type="range" min="-10" max="10" step="0.1" value="0" />
+        </div>
+        <div class="field">
+          <label for="cNum">c</label>
+          <input id="cNum" type="number" step="0.1" value="0" />
+          <input id="cRange" type="range" min="-10" max="10" step="0.1" value="0" />
+        </div>
+      </div>
+
+      <!-- inequality + zoom -->
+      <div class="row" style="margin-top:.75rem">
+        <div>
+          <label for="ineq">Inequality</label>
+          <select id="ineq">
+            <option value="none">None (y = …)</option>
+            <option value="lt">Shade Below (y &lt; …)</option>
+            <option value="gt">Shade Above (y &gt; …)</option>
+          </select>
+        </div>
+        <div>
+          <label for="zoom">Zoom (±)</label>
+          <input id="zoom" type="range" min="6" max="22" step="1" value="12" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <div class="btns" style="margin:0">
+            <button class="secondary" id="resetBtn" title="Reset view & values">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview small" id="preview">Equation: y = x²</div>
+
+      <div class="btns">
+        <button class="primary" id="randBtn">Random Example</button>
+        <button class="ghost" id="animateBtn">Animate a ↻</button>
+      </div>
+
+      <p class="muted small">
+        Tips: Larger |a| makes the parabola narrower. b shifts the vertex left/right. c is the y-intercept.
+        Use the inequality menu to shade the solution region for <em>y &lt; …</em> or <em>y &gt; …</em>.
+      </p>
+    </section>
+
+    <!-- RIGHT: Graph -->
+    <section class="card">
+      <h2 style="margin-top:0">Graph</h2>
+      <canvas id="graph" width="900" height="540" aria-label="Quadratic graph canvas"></canvas>
+      <div class="legend small">
+        <span class="chip"><span class="swatch" style="background:#0f172a"></span>Parabola</span>
+        <span class="chip"><span class="swatch" style="background:#e11d48"></span>Axis of symmetry</span>
+        <span class="chip"><span class="swatch" style="background:#22c55e"></span>Vertex</span>
+        <span class="chip"><span class="swatch" style="background:#2563eb"></span>Y-intercept</span>
+        <span class="chip"><span class="swatch" style="background:#7c3aed"></span>Roots (if real)</span>
+      </div>
+
+      <div id="facts" class="muted small" style="margin-top:.6rem">
+        Vertex: — • Axis: x = — • Discriminant: — • Roots: —
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="small">Made with vanilla HTML, CSS, and JavaScript. <strong>Quadratic Explorer</strong>.</div>
+  </footer>
+
+  <script>
+    // ------- helpers -------
+    const $ = s => document.querySelector(s);
+    const fmt = n => {
+      if (!isFinite(n)) return String(n);
+      const a = Math.abs(n);
+      const s = (a<1e-4 || a>1e6) ? n.toExponential(4) : n.toFixed(4);
+      return s.replace(/\.0+$/,'').replace(/(\.[0-9]*?)0+$/,'$1');
+    };
+
+    // ------- state -------
+    const state = { a:1, b:0, c:0, zoom:12, ineq:'none', anim:false, t:0 };
+
+    // ------- UI wiring (sync range <-> number) -------
+    function link(num, range, key){
+      const numEl = $(num), rangeEl = $(range);
+      const set = v => { state[key] = parseFloat(v); numEl.value = v; rangeEl.value = v; refresh(); };
+      numEl.addEventListener('input', e => set(e.target.value));
+      rangeEl.addEventListener('input', e => set(e.target.value));
+      set(rangeEl.value);
+    }
+    link('#aNum','#aRange','a');
+    link('#bNum','#bRange','b');
+    link('#cNum','#cRange','c');
+
+    $('#zoom').addEventListener('input', e => { state.zoom = parseInt(e.target.value,10); refresh(); });
+    $('#ineq').addEventListener('change', e => { state.ineq = e.target.value; refresh(); });
+
+    $('#resetBtn').addEventListener('click', () => {
+      state.a = 1; state.b = 0; state.c = 0; state.zoom = 12; state.ineq = 'none';
+      ['#aNum','#aRange','#bNum','#bRange','#cNum','#cRange'].forEach((id,i)=>{
+        const v = [1,1,0,0,0,0][i];
+        $(id).value = v;
+      });
+      $('#zoom').value = 12; $('#ineq').value = 'none';
+      refresh();
+    });
+
+    $('#randBtn').addEventListener('click', () => {
+      const pick = [
+        {a:1,b:-2,c:-3},{a:-1,b:4,c:-2},{a:0.5,b:0,c:-4},
+        {a:2,b:5,c:3},{a:1,b:2,c:1},{a:1,b:0,c:0}
+      ][Math.floor(Math.random()*6)];
+      state.a=pick.a; state.b=pick.b; state.c=pick.c;
+      ['#aNum','#aRange'].forEach(id=>$(id).value=pick.a);
+      ['#bNum','#bRange'].forEach(id=>$(id).value=pick.b);
+      ['#cNum','#cRange'].forEach(id=>$(id).value=pick.c);
+      refresh();
+    });
+
+    $('#animateBtn').addEventListener('click', () => {
+      state.anim = !state.anim;
+      $('#animateBtn').textContent = state.anim ? 'Stop' : 'Animate a ↻';
+      if(state.anim) requestAnimationFrame(tick);
+    });
+
+    // ------- math / drawing -------
+    const canvas = $('#graph');
+    const ctx = canvas.getContext('2d');
+
+    function setPixelRatio(){
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    window.addEventListener('resize', ()=>{ setPixelRatio(); refresh(); });
+    setPixelRatio();
+
+    function worldToScreen(x,y,scale,ox,oy){
+      return [ox + x*scale, oy - y*scale];
+    }
+
+    function draw(){
+      const {a,b,c,zoom,ineq} = state;
+      const scale = zoom*10;       // pixels per 1 world unit
+      const ox = canvas.clientWidth/2, oy = canvas.clientHeight/2;
+
+      // clear
+      ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+
+      // grid
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.beginPath();
+      const step = scale>=140 ? 0.5 : 1;
+      for(let x=-1000; x<=1000; x+=step){
+        const sx = worldToScreen(x,0,scale,ox,oy)[0];
+        if(sx<0||sx>canvas.clientWidth) continue;
+        ctx.moveTo(sx,0); ctx.lineTo(sx,canvas.clientHeight);
+      }
+      for(let y=-1000; y<=1000; y+=step){
+        const sy = worldToScreen(0,y,scale,ox,oy)[1];
+        if(sy<0||sy>canvas.clientHeight) continue;
+        ctx.moveTo(0,sy); ctx.lineTo(canvas.clientWidth,sy);
+      }
+      ctx.stroke();
+
+      // axes
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(0,oy); ctx.lineTo(canvas.clientWidth,oy);
+      ctx.moveTo(ox,0); ctx.lineTo(ox,canvas.clientHeight);
+      ctx.stroke();
+
+      // parabola path (sampled)
+      const f = x => a*x*x + b*x + c;
+
+      // shading
+      if(ineq!=='none'){
+        ctx.save();
+        ctx.beginPath();
+        const minX = -(ox/scale) - 1, maxX = ((canvas.clientWidth-ox)/scale) + 1;
+        const stepX = 1/scale * 3; // adaptive
+        for(let x=minX; x<=maxX; x+=stepX){
+          const y = f(x);
+          const [sx,sy] = worldToScreen(x,y,scale,ox,oy);
+          if(x===minX) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
+        }
+        // close to top/bottom depending on inequality
+        if(ineq==='lt'){
+          ctx.lineTo(worldToScreen(maxX,-10000,scale,ox,oy)[0], worldToScreen(maxX,-10000,scale,ox,oy)[1]);
+          ctx.lineTo(worldToScreen(minX,-10000,scale,ox,oy)[0], worldToScreen(minX,-10000,scale,ox,oy)[1]);
+        }else{
+          ctx.lineTo(worldToScreen(maxX,10000,scale,ox,oy)[0], worldToScreen(maxX,10000,scale,ox,oy)[1]);
+          ctx.lineTo(worldToScreen(minX,10000,scale,ox,oy)[0], worldToScreen(minX,10000,scale,ox,oy)[1]);
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(37,99,235,0.12)';
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // parabola curve
+      ctx.beginPath();
+      const minX = -(ox/scale) - 1, maxX = ((canvas.clientWidth-ox)/scale) + 1;
+      const stepX = 1/scale * 2;
+      for(let x=minX; x<=maxX; x+=stepX){
+        const y = f(x);
+        const [sx,sy] = worldToScreen(x,y,scale,ox,oy);
+        if(x===minX) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
+      }
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // features: vertex, axis, y-intercept, roots
+      const xv = -b/(2*a);
+      const yv = f(xv);
+      // axis
+      if (isFinite(xv)){
+        ctx.setLineDash([6,6]);
+        ctx.strokeStyle = '#e11d48';
+        ctx.beginPath();
+        const [sx1,sy1] = worldToScreen(xv,10000,scale,ox,oy);
+        const [sx2,sy2] = worldToScreen(xv,-10000,scale,ox,oy);
+        ctx.moveTo(sx1,sy1); ctx.lineTo(sx2,sy2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // vertex
+      drawPoint(xv,yv,'#22c55e');
+      // y-intercept (0,c)
+      drawPoint(0,c,'#2563eb');
+
+      // roots
+      const D = b*b - 4*a*c;
+      let rootText = 'none (complex)';
+      if (D > 1e-12){
+        const r1 = (-b + Math.sqrt(D)) / (2*a);
+        const r2 = (-b - Math.sqrt(D)) / (2*a);
+        drawPoint(r1,0,'#7c3aed');
+        drawPoint(r2,0,'#7c3aed');
+        rootText = `x₁=${fmt(r1)}, x₂=${fmt(r2)}`;
+      } else if (Math.abs(D) <= 1e-12){
+        const r = (-b)/(2*a);
+        drawPoint(r,0,'#7c3aed');
+        rootText = `x=${fmt(r)} (double)`;
+      }
+
+      // facts panel + preview
+      $('#facts').textContent =
+        `Vertex: (${fmt(xv)}, ${fmt(yv)}) • Axis: x = ${fmt(xv)} • Discriminant: ${fmt(D)} • Roots: ${rootText}`;
+
+      $('#preview').textContent = `Equation: y = ${coefStr(a,'x²')}${signTerm(b,'x')}${signTerm(c,'')}`.replace(/^y = \s*\+\s*/,'y = ');
+      
+      function drawPoint(x,y,color){
+        const [sx,sy] = worldToScreen(x,y,scale,ox,oy);
+        ctx.beginPath(); ctx.arc(sx,sy,4,0,Math.PI*2);
+        ctx.fillStyle = color; ctx.fill(); ctx.closePath();
+      }
+    }
+
+    function signTerm(coef, label){
+      if (!coef) return '';
+      const s = coef>=0 ? ' + ' : ' - ';
+      const mag = Math.abs(coef);
+      const magStr = (mag===1 && label) ? '' : fmt(mag);
+      return s + magStr + (label||'');
+    }
+    const coefStr = (v,l) => (v===1 ? l : v===-1 ? '-'+l : fmt(v)+ (l?l:'' ));
+
+    function refresh(){ draw(); }
+
+    // animation for a
+    function tick(ts){
+      if(!state.anim) return;
+      state.t += 0.016;
+      const base = parseFloat($('#aRange').value);
+      const wobble = Math.sin(state.t)*0.8;
+      const v = Math.max(-5, Math.min(5, base + wobble));
+      state.a = v;
+      $('#aNum').value = v.toFixed(2);
+      $('#aRange').value = v;
+      refresh();
+      requestAnimationFrame(tick);
+    }
+
+    // initial render
+    refresh();
+  </script>
+</body>
+  </html>
