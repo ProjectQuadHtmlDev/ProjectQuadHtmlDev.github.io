@@ -1,349 +1,128 @@
-<!DOCTYPE html> <!-- Defines this document as HTML5 -->
-<html lang="en"> <!-- Root element, language is English -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" /> <!-- Character encoding (UTF-8 for all text/symbols) -->
-  <meta name="viewport" content="width=device-width, initial-scale=1" /> <!-- Responsive scaling on mobile -->
-  <title>Quadratic Equation Solver</title> <!-- Browser tab title -->
-  <meta name="description" content="Solve ax² + bx + c = 0 and see step-by-step workings." /> <!-- SEO description -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Math Tools Hub</title>
+  <meta name="description" content="A collection of interactive math tools created by Wilford John E. Cañete." />
 
   <style>
-    /* ---------- CSS STYLING ---------- */
+    /* ---------- THEME COLORS ---------- */
     :root {
-      /* Define reusable color variables */
       --fg:#0f172a;
       --muted:#475569;
       --bg:#f8fafc;
       --card:#ffffff;
-      --accent:#2563eb;    /* Blue for main buttons */
-      --accent-2:#22c55e;  /* Green for success */
-      --warn:#ef4444;      /* Red for warnings */
+      --accent:#2563eb;    /* Blue buttons */
+      --accent-2:#22c55e;  /* Green */
+      --warn:#ef4444;      /* Red */
     }
 
-    * { box-sizing:border-box } /* Makes padding/margin calculations predictable */
+    * { box-sizing:border-box; margin:0; padding:0 }
 
     body {
-      margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Arial, sans-serif;
       color: var(--fg);
-      background: linear-gradient(180deg, #f0f7ff, #fff); /* Gradient background */
+      background: linear-gradient(180deg, #f0f7ff, #fff);
     }
 
-    header { padding:2rem 1rem; text-align:center } /* Top header */
-    h1 { margin:0 0 .25rem; font-size:clamp(1.5rem,2.6vw,2.2rem) } /* Title text */
-    .sub { color:var(--muted) } /* Subtitle */
+    header { padding:2rem 1rem; text-align:center }
+    h1 { font-size:clamp(1.8rem,3vw,2.5rem); margin-bottom:.3rem }
+    .sub { color:var(--muted) }
 
-    .container { max-width:980px; margin:0 auto; padding:1rem } /* Center content */
-    .grid { display:grid; grid-template-columns:1fr; gap:1rem } /* Default single column layout */
+    .container { max-width:980px; margin:0 auto; padding:1rem }
+    .grid { display:grid; gap:1rem }
     @media (min-width: 900px) {
-      .grid { grid-template-columns: 420px 1fr } /* Two-column layout on big screens */
+      .grid { grid-template-columns: repeat(2, 1fr) }
     }
 
     .card {
       background:var(--card);
       border-radius:18px;
       box-shadow:0 10px 30px rgba(2,6,23,.12);
-      padding:1rem;
+      padding:1.5rem;
     }
 
-    label { font-weight:600; display:block; margin:.5rem 0 .25rem }
-    input[type="number"] {
-      width:100%; padding:.7rem;
-      border:1px solid #e2e8f0; border-radius:12px;
-      font-size:1rem; background:#fff;
-    }
-    input[type="number"]:focus {
-      outline:3px solid rgba(37,99,235,.15); border-color:var(--accent);
-    }
+    h2 { margin-bottom:.5rem }
 
-    .row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem } /* a, b, c inputs side by side */
-    .btns { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem } /* Buttons row */
-
+    .btns { display:flex; flex-wrap:wrap; gap:.75rem; margin-top:.5rem }
     button {
       appearance:none;
       border:0;
       border-radius:12px;
-      padding:.7rem 1rem;
-      font-weight:700;
+      padding:.8rem 1.2rem;
+      font-weight:600;
       cursor:pointer;
+      transition: background .2s ease;
     }
+    .primary { background:var(--accent); color:#fff }
+    .primary:hover { background:#1e4dbf }
+    .secondary { background:#e2e8f0 }
+    .secondary:hover { background:#cbd5e1 }
+    .disabled { background:#f1f5f9; color:#94a3b8; cursor:not-allowed }
 
-    .primary { background:var(--accent); color:#fff } /* Solve button */
-    .secondary { background:#e2e8f0 } /* Clear button */
-    .ghost { background:transparent; border:2px dashed #e2e8f0 } /* Example button */
-
-    .preview {
-      font-variant-ligatures: none;
-      padding:.75rem 1rem;
-      background:#f8fafc;
-      border:1px dashed #e2e8f0;
-      border-radius:12px;
-      margin-top:.75rem;
-    }
-
-    .badge { /* "new" badge on Examples button */
-      display:inline-block;
-      font-size:.8rem;
-      padding:.2rem .55rem;
-      border-radius:999px;
-      background:#e0f2fe;
-      color:#0369a1;
-      margin-left:.25rem;
-    }
-
-    .steps ol { line-height:1.7 }
-    .katexish { font-family: monospace; white-space: pre-wrap } /* For math steps */
-    .muted { color:var(--muted) }
-
-    .result {
-      padding:.75rem 1rem;
-      background:#f0fdf4;
-      border:1px solid rgba(34,197,94,.25);
-      border-radius:12px;
-    }
-
-    .warn {
-      padding:.75rem 1rem;
-      background:#fef2f2;
-      border:1px solid rgba(239,68,68,.25);
-      border-radius:12px;
-    }
-
-    footer { padding:2rem 1rem; text-align:center; color:var(--muted) }
-    .small { font-size:.9rem }
     .source-button {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #333;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: background 0.3s ease;
-}
+      display:inline-block;
+      margin-top:1rem;
+      padding:.7rem 1.2rem;
+      background-color:#333;
+      color:#fff;
+      text-decoration:none;
+      border-radius:8px;
+      transition: background 0.3s ease;
+    }
+    .source-button:hover { background:#555 }
 
-.source-button:hover {
-  background-color: #555;
-}
+    footer { padding:2rem 1rem; text-align:center; color:var(--muted); font-size:.9rem }
   </style>
 </head>
-
 <body>
+
   <!-- HEADER -->
   <header>
-    <h1>Quadratic Equation Solver</h1>
-    <div class="sub">Solves <strong>ax² + bx + c = 0</strong> and shows the steps.</div>
+    <h1>Math Tools Hub</h1>
+    <div class="sub">Explore useful math solvers and graphing utilities.</div>
   </header>
 
+  <!-- MAIN CONTENT -->
   <div class="container grid">
-    <!-- LEFT SIDE: INPUTS -->
+    <!-- Tools Card -->
     <section class="card">
-      <h2 style="margin-top:0">Enter coefficients</h2>
-      <div class="row">
-        <!-- Coefficient inputs -->
-        <div>
-          <label for="a">a</label>
-          <input id="a" type="number" step="any" value="1" />
-        </div>
-        <div>
-          <label for="b">b</label>
-          <input id="b" type="number" step="any" value="-3" />
-        </div>
-        <div>
-          <label for="c">c</label>
-          <input id="c" type="number" step="any" value="2" />
-        </div>
-      </div>
-
-      <!-- Live equation preview -->
-      <div class="preview small" id="preview">Equation: x² - 3x + 2 = 0</div>
-
-      <!-- Buttons -->
+      <h2>Available Tools</h2>
+      <p>Quick access to interactive tools:</p>
       <div class="btns">
-        <button class="primary" id="solveBtn">Solve</button>
-        <button class="secondary" id="clearBtn">Clear</button>
-        <button class="ghost" id="exampleBtn" title="Fills common examples">
-          Examples <span class="badge">new</span>
-        </button>
+        <button class="primary" onclick="window.open('#','_blank')">Quadratic Equation Solver</button>
+        <button class="primary" onclick="window.open('#','_blank')">Graphing Tool</button>
+        <button class="disabled">Coming Soon</button>
+        <button class="disabled">Coming Soon</button>
       </div>
-
-      <p class="muted small">
-        Tip: coefficients can be decimals (e.g., a = 0.5). If a = 0 the equation becomes linear.
-      </p>
     </section>
 
-    <!-- RIGHT SIDE: STEPS / SOLUTION -->
-    <section class="card steps">
-      <h2 style="margin-top:0">Steps & Solution</h2>
-      <div id="output" class="muted">Enter values and click <em>Solve</em>.</div>
+    <!-- About Card -->
+    <section class="card">
+      <h2>About This Website</h2>
+      <p>
+        This site is built with <strong>HTML, CSS, and JavaScript</strong>.  
+        It helps students solve math problems faster and understand concepts better.  
+        Each tool is lightweight, interactive, and designed to run right in your browser.
+      </p>
+      <a href="#" target="_blank" class="source-button">View Source Code</a>
+    </section>
+
+    <!-- Creator Card -->
+    <section class="card" style="grid-column:1/-1">
+      <h2>About the Creator</h2>
+      <p>
+        Created by <strong>Wilford John E. Cañete</strong>.  
+        A passionate learner who builds projects to make studying more interactive, fun, and accessible.
+      </p>
     </section>
   </div>
 
   <!-- FOOTER -->
   <footer>
-  <div class="small">Made with vanilla HTML, CSS, and JavaScript. <strong>Created By Wilford</strong>.</div>
-  <a href="https://github.com/ProjectQuadHtmlDev/ProjectQuadHtmlDev.github.io"
-     target="_blank"
-     class="source-button">Source Code</a>
+    © 2025 Math Tools Hub | Made by Wilford John E. Cañete
   </footer>
 
-  <!-- JAVASCRIPT -->
-  <script>
-    const $ = sel => document.querySelector(sel); // Short helper for selecting elements
-
-    const fmt = (n) => { // Format numbers nicely
-      if (!isFinite(n)) return String(n);
-      const abs = Math.abs(n);
-      const s = (abs < 1e-6 || abs > 1e8) ? n.toExponential(6) : n.toFixed(6);
-      return s.replace(/\.0+$/,'').replace(/(\.[0-9]*?)0+$/,'$1');
-    };
-
-    const signTerm = (coef, variable) => { // Builds "+ bx" or "- c" strings
-      if (!coef) return '';
-      const s = coef >= 0 ? ' + ' : ' - ';
-      const mag = Math.abs(coef);
-      const magStr = (mag === 1 && variable) ? '' : fmt(mag);
-      return s + magStr + (variable || '');
-    };
-
-    // Updates the preview equation dynamically
-    const buildEquationPreview = () => {
-      const a = parseFloat($('#a').value);
-      const b = parseFloat($('#b').value);
-      const c = parseFloat($('#c').value);
-      if ([a,b,c].some(x => Number.isNaN(x))) { $('#preview').textContent = 'Equation: —'; return; }
-      let eq = '';
-      if (a === 1) eq += 'x²';
-      else if (a === -1) eq += '-x²';
-      else if (a !== 0) eq += fmt(a) + 'x²';
-      eq += signTerm(b, 'x');
-      eq += signTerm(c, '');
-      eq = eq.trim();
-      if (eq.startsWith('+')) eq = eq.slice(1).trim();
-      if (eq === '') eq = '0';
-      $('#preview').textContent = 'Equation: ' + eq + ' = 0';
-    };
-
-    ['#a','#b','#c'].forEach(id => $(id).addEventListener('input', buildEquationPreview));
-
-    const perfectSquare = (x) => { // Checks if discriminant is a perfect square
-      if (x < 0) return false;
-      const r = Math.round(Math.sqrt(x));
-      return r*r === x ? r : false;
-    };
-
-    const solve = () => {
-      const a = parseFloat($('#a').value);
-      const b = parseFloat($('#b').value);
-      const c = parseFloat($('#c').value);
-      const out = $('#output');
-
-      if ([a,b,c].some(x => Number.isNaN(x))) {
-        out.innerHTML = `<div class="warn">Please enter valid numbers for a, b, and c.</div>`;
-        return;
-      }
-
-      const eps = 1e-12;
-      if (Math.abs(a) < eps) {
-        // LINEAR CASE (a = 0)
-        if (Math.abs(b) < eps) {
-          if (Math.abs(c) < eps) {
-            out.innerHTML = `<div class="result"><strong>Infinitely many solutions</strong> — the equation reduces to <span class="katexish">0 = 0</span>.</div>`;
-          } else {
-            out.innerHTML = `<div class="warn"><strong>No solution</strong> — the equation reduces to <span class="katexish">${fmt(c)} = 0</span>, which is false.</div>`;
-          }
-          return;
-        }
-        const x = -c / b; // Solve bx + c = 0
-        out.innerHTML = `
-          <ol>
-            <li>Since <span class="katexish">a = 0</span>, the equation is linear.</li>
-            <li>Rearrange: <span class="katexish">${fmt(b)}x = ${fmt(-c)}</span>.</li>
-            <li>Divide both sides by <span class="katexish">${fmt(b)}</span>:</li>
-          </ol>
-          <div class="result"><strong>x = ${fmt(x)}</strong></div>
-        `;
-        return;
-      }
-
-      // QUADRATIC CASE
-      const D = b*b - 4*a*c; // Discriminant
-      const twoA = 2*a;
-      const Dstr = fmt(D);
-
-      let steps = `
-        <ol>
-          <li>Equation in standard form: ${$('#preview').textContent}</li>
-          <li>Quadratic formula: <span class="katexish">x = (-b ± √(b² - 4ac)) / (2a)</span></li>
-          <li>Discriminant: D = ${fmt(b)}² - 4·${fmt(a)}·${fmt(c)} = ${Dstr}</li>
-      `;
-
-      if (D > eps) {
-        // Two real roots
-        const sqrtD = Math.sqrt(D);
-        const x1 = (-b + sqrtD) / twoA;
-        const x2 = (-b - sqrtD) / twoA;
-        steps += `
-          <li>D > 0 → two distinct real roots.</li>
-        </ol>
-        <div class="result"><strong>
-          x₁ = ${fmt(x1)}<br>
-          x₂ = ${fmt(x2)}
-        </strong></div>
-        `;
-      } else if (Math.abs(D) <= eps) {
-        // Double root
-        const x = (-b) / twoA;
-        steps += `
-          <li>D = 0 → one real double root.</li>
-        </ol>
-        <div class="result"><strong>x = ${fmt(x)}</strong></div>
-        `;
-      } else {
-        // Complex roots
-        const sqrtAbsD = Math.sqrt(-D);
-        const real = (-b) / twoA;
-        const imag = sqrtAbsD / Math.abs(twoA);
-        steps += `
-          <li>D < 0 → complex roots.</li>
-        </ol>
-        <div class="result"><strong>
-          x = ${fmt(real)} ± ${fmt(imag)}i
-        </strong></div>
-        `;
-      }
-
-      out.innerHTML = steps;
-    };
-
-    // Reset inputs
-    const clearAll = () => {
-      ['#a','#b','#c'].forEach(id => $(id).value = '');
-      $('#output').innerHTML = '<span class="muted">Enter values and click <em>Solve</em>.</span>';
-      buildEquationPreview();
-    };
-
-    // Auto-fill with example equations
-    const fillExample = () => {
-      const examples = [
-        {a:1,b:-3,c:2},   // Roots: 1 and 2
-        {a:1,b:2,c:1},    // Double root: -1
-        {a:2,b:5,c:3},    // Non-integer roots
-        {a:1,b:1,c:1},    // Complex roots
-        {a:0,b:4,c:-8},   // Linear case
-      ];
-      const pick = examples[Math.floor(Math.random()*examples.length)];
-      $('#a').value = pick.a; $('#b').value = pick.b; $('#c').value = pick.c;
-      buildEquationPreview();
-      solve();
-    };
-
-    // Event listeners for buttons
-    $('#solveBtn').addEventListener('click', solve);
-    $('#clearBtn').addEventListener('click', clearAll);
-    $('#exampleBtn').addEventListener('click', fillExample);
-
-    // Initial preview
-    buildEquationPreview();
-  </script>
 </body>
 </html>
