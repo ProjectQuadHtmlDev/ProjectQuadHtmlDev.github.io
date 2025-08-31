@@ -1,110 +1,45 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Robotic TTS Generator</title>
-<style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:24px;background:#0f172a;color:#e6eef8}
-  .card{background:#071028;padding:18px;border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,.6);max-width:900px;margin:auto;}
-  textarea{width:100%;height:160px;padding:10px;border-radius:8px;border:1px solid #20314a;background:#061226;color:#dbeeff;resize:vertical}
-  .row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
-  label{font-size:13px}
-  input[type=range]{width:220px}
-  select,button,input[type=checkbox]{background:#082235;color:#dbeeff;border:1px solid #11324a;padding:6px;border-radius:8px}
-  button{cursor:pointer}
-  .controls{display:flex;gap:8px}
-  .small{font-size:12px;color:#9fb7cf}
-</style>
+  <meta charset="UTF-8">
+  <title>Robot Voice Generator</title>
 </head>
-<body>
-  <div class="card">
-    <h2>Robotic Voice Generator (client-side)</h2>
-    <p class="small">Powered by <code>eSpeak (speak.js)</code>, works fully offline on GitHub Pages.</p>
+<body style="font-family: Arial; text-align:center; padding:20px; background:#111; color:white;">
+  <h2>Robotic Voice Generator</h2>
 
-    <textarea id="txt">Hello. This is a demo of a robotic voice generator. Edit the text, change pitch and speed, toggle robotic mode, then press Speak.</textarea>
+  <textarea id="textInput" rows="5" cols="50" placeholder="Enter text here"></textarea><br><br>
 
-    <div class="row">
-      <label>Rate <span id="rateVal">175</span>
-        <input id="rate" type="range" min="80" max="400" step="5" value="175">
-      </label>
+  <label>Speed: 
+    <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+  </label>
+  <span id="rateVal">1</span><br><br>
 
-      <label>Pitch <span id="pitchVal">50</span>
-        <input id="pitch" type="range" min="0" max="99" step="1" value="50">
-      </label>
+  <label>Pitch: 
+    <input type="range" id="pitch" min="0" max="2" step="0.1" value="1">
+  </label>
+  <span id="pitchVal">1</span><br><br>
 
-      <label><input id="robotic" type="checkbox"> Robotic mode</label>
+  <button onclick="speakText()">🔊 Speak</button>
 
-      <div class="controls" style="margin-left:auto">
-        <button id="speakBtn">Speak</button>
-        <button id="stopBtn">Stop</button>
-      </div>
-    </div>
-
-    <div class="row small" style="margin-top:8px">
-      <div>Tip: For more mechanical sound, lower pitch and raise speed, then enable Robotic mode.</div>
-    </div>
-  </div>
-
-  <!-- Include Speak.js (WebAssembly eSpeak) -->
-  <script src="speakClient.js"></script>
   <script>
-    const txt = document.getElementById('txt');
-    const rate = document.getElementById('rate');
-    const pitch = document.getElementById('pitch');
-    const rateVal = document.getElementById('rateVal');
-    const pitchVal = document.getElementById('pitchVal');
-    const speakBtn = document.getElementById('speakBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const robotic = document.getElementById('robotic');
+    const synth = window.speechSynthesis;
+    const textInput = document.getElementById("textInput");
+    const rate = document.getElementById("rate");
+    const pitch = document.getElementById("pitch");
+    const rateVal = document.getElementById("rateVal");
+    const pitchVal = document.getElementById("pitchVal");
 
-    rate.addEventListener('input', ()=> rateVal.textContent = rate.value);
-    pitch.addEventListener('input', ()=> pitchVal.textContent = pitch.value);
-
-    let speaking = false;
+    rate.oninput = () => rateVal.textContent = rate.value;
+    pitch.oninput = () => pitchVal.textContent = pitch.value;
 
     function speakText() {
-      if (!txt.value.trim()) return;
-
-      const opts = {
-        text: txt.value,
-        pitch: parseInt(pitch.value), // 0–99
-        speed: parseInt(rate.value),  // words per minute
-        amplitude: 100
-      };
-
-      // If robotic mode: add choppiness (split words)
-      if (robotic.checked) {
-        const words = opts.text.split(/\s+/);
-        let i = 0;
-        speaking = true;
-        function playNext() {
-          if (!speaking || i >= words.length) { speaking = false; return; }
-          speakTextInternal({ ...opts, text: words[i++] });
-          setTimeout(playNext, 200); // short robotic pause
-        }
-        playNext();
-      } else {
-        speakTextInternal(opts);
+      if (synth.speaking) {
+        synth.cancel(); // stop previous speech
       }
-    }
-
-    function speakTextInternal(opts) {
-      const audio = speak(opts);
-      const audioElement = new Audio();
-      audioElement.src = URL.createObjectURL(new Blob([audio], {type: "audio/wav"}));
-      audioElement.play();
-    }
-
-    speakBtn.addEventListener('click', ()=>{
-      stopSpeech();
-      setTimeout(speakText, 100);
-    });
-
-    stopBtn.addEventListener('click', stopSpeech);
-
-    function stopSpeech() {
-      speaking = false;
+      const utter = new SpeechSynthesisUtterance(textInput.value || "Hello, I am a robot.");
+      utter.rate = parseFloat(rate.value);
+      utter.pitch = parseFloat(pitch.value);
+      synth.speak(utter);
     }
   </script>
 </body>
