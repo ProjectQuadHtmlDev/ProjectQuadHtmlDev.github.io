@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Robotic TTS Generator</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:24px;background:#0f172a;color:#e6eef8}
+  .card{background:#071028;padding:18px;border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,.6);max-width:900px;margin:auto;}
+  textarea{width:100%;height:160px;padding:10px;border-radius:8px;border:1px solid #20314a;background:#061226;color:#dbeeff;resize:vertical}
+  .row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  label{font-size:13px}
+  input[type=range]{width:220px}
+  select,button,input[type=checkbox]{background:#082235;color:#dbeeff;border:1px solid #11324a;padding:6px;border-radius:8px}
+  button{cursor:pointer}
+  .controls{display:flex;gap:8px}
+  .small{font-size:12px;color:#9fb7cf}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h2>Robotic Voice Generator (client-side)</h2>
+    <p class="small">Uses the browser <code>speechSynthesis</code>. Host on GitHub Pages — no server needed.</p>
+
+    <textarea id="txt">Hello. This is a demo of a robotic voice generator. Edit the text, change pitch and speed, toggle robotic mode, then press Speak.</textarea>
+
+    <div class="row">
+      <label>Voice
+        <select id="voiceSelect"></select>
+      </label>
+
+      <label>Rate <span id="rateVal">1</span>
+        <input id="rate" type="range" min="0.3" max="2" step="0.05" value="1">
+      </label>
+
+      <label>Pitch <span id="pitchVal">1</span>
+        <input id="pitch" type="range" min="0" max="2" step="0.05" value="1">
+      </label>
+
+      <label><input id="robotic" type="checkbox"> Robotic mode</label>
+
+      <div class="controls" style="margin-left:auto">
+        <button id="speakBtn">Speak</button>
+        <button id="stopBtn">Stop</button>
+      </div>
+    </div>
+
+    <div class="row small" style="margin-top:8px">
+      <div>Tip: For more mechanical sound, try a low pitch (0.5) and fast rate (1.2–1.6) and enable Robotic mode.</div>
+    </div>
+  </div>
+
+<script>
+  const synth = window.speechSynthesis;
+  const voiceSelect = document.getElementById('voiceSelect');
+  const rate = document.getElementById('rate');
+  const pitch = document.getElementById('pitch');
+  const rateVal = document.getElementById('rateVal');
+  const pitchVal = document.getElementById('pitchVal');
+  const speakBtn = document.getElementById('speakBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const robotic = document.getElementById('robotic');
+  const txt = document.getElementById('txt');
+
+  function populateVoices(){
+    const voices = synth.getVoices() || [];
+    voiceSelect.innerHTML = '';
+    voices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${v.name} — ${v.lang}${v.default ? ' (default)' : ''}`;
+      voiceSelect.appendChild(opt);
+    });
+  }
+
+  populateVoices();
+  // Some browsers load voices asynchronously
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = populateVoices;
+  }
+
+  rate.addEventListener('input', ()=> rateVal.textContent = rate.value);
+  pitch.addEventListener('input', ()=> pitchVal.textContent = pitch.value);
+
+  let currentQueue = [];
+  let speaking = false;
+
+  function speakText(text, opts = {}) {
+    if(!text) return;
+    const voices = synth.getVoices();
+    const voiceIndex = parseInt(voiceSelect.value) || 0;
+    const chosenVoice = voices[voiceIndex] || null;
+    const baseRate = parseFloat(rate.value) || 1;
+    const basePitch = parseFloat(pitch.value) || 1;
+    const isRobotic = robotic.checked;
+
+    // If robotic: break into small chunks to create staccato/tremolo effect
+    if (isRobotic) {
+      // split into short chunks (words or small groups)
+      const words = text.split(/\s+/);
+      const chunks = [];
+      for(let i=0;i<words.length;i+=2){ // chunk size 2 words — tweak for effect
+        chunks.push(words.slice(i,i+2).join(' '));
+      }
+
+      // Create a sequence of utterances with alternating pitch/volume/pauses
+      currentQueue = chunks.map((chunk, idx) => {
+        const u = new SpeechSynthesisUtterance(chunk);
+        if (chosenVoice) u.voice = chosenVoice;
+        // alternate pitch slightly for a mechanical wobble
+        const p = basePitch * (idx % 2 === 0 ? 0.85 : 1.15);
+        u.pitch = Math.max(0, Math.min(2, p));
+        // slightly vary rate as well
+        u.rate = Math.max(0.3, Math.min(2, baseRate * (idx % 2 === 0 ? 1.15 : 0.9)));
+        u.volume = 1;
+        return u;
+      });
+
+      // Chain them so they play one after another with tiny pauses
+      let i = 0;
+      speaking = true;
+      function playNext(){
+        if(!speaking) return;
+        if(i >= currentQueue.length){
+          speaking = false;
+          return;
+        }
+        const u = currentQueue[i++];
+        u.onend = () => {
+          // short gap between chunks to make it choppy
+          setTimeout(playNext, 60); // 60ms gap
+        };
+        synth.speak(u);
+      }
+      playNext();
+    } else {
+      // Plain speaking
+      const u = new SpeechSynthesisUtterance(text);
+      if (chosenVoice) u.voice = chosenVoice;
+      u.rate = baseRate;
+      u.pitch = basePitch;
+      u.volume = 1;
+      currentQueue = [u];
+      speaking = true;
+      u.onend = ()=> speaking = false;
+      synth.speak(u);
+    }
+  }
+
+  speakBtn.addEventListener('click', ()=>{
+    // Stop any running speech first
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+      speaking = false;
+      currentQueue = [];
+      // small delay to ensure cancel completes on some browsers
+      setTimeout(()=> speakText(txt.value), 100);
+    } else {
+      speakText(txt.value);
+    }
+  });
+
+  stopBtn.addEventListener('click', ()=>{
+    synth.cancel();
+    speaking = false;
+    currentQueue = [];
+  });
+
+  // keyboard shortcut: Ctrl+Enter to speak
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      speakBtn.click();
+    }
+  });
+
+  // basic mobile-friendly: unlock voices on user interaction
+  document.addEventListener('click', ()=> { if (!synth.getVoices().length) populateVoices(); }, {once:true});
+</script>
+</body>
+</html>
