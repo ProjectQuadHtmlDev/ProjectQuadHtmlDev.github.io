@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Robotic TTS Generator</title>
+<title>Robotic TTS Generator (VoiceRSS)</title>
 <style>
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:24px;background:#0f172a;color:#e6eef8}
   .card{background:#071028;padding:18px;border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,.6);max-width:900px;margin:auto;}
@@ -11,30 +11,43 @@
   .row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
   label{font-size:13px}
   input[type=range]{width:220px}
-  select,button,input[type=checkbox]{background:#082235;color:#dbeeff;border:1px solid #11324a;padding:6px;border-radius:8px}
+  select,button,input[type=checkbox],input[type=text]{background:#082235;color:#dbeeff;border:1px solid #11324a;padding:6px;border-radius:8px}
   button{cursor:pointer}
   .controls{display:flex;gap:8px}
   .small{font-size:12px;color:#9fb7cf}
+  .minor{font-size:12px;color:#89a6c1;margin-left:6px}
+  .inline{display:inline-flex;align-items:center;gap:8px}
 </style>
 </head>
 <body>
   <div class="card">
-    <h2>Robotic Voice Generator (client-side)</h2>
-    <p class="small">Uses the browser <code>speechSynthesis</code>. Host on GitHub Pages — no server needed.</p>
+    <h2>Robotic Voice Generator (VoiceRSS)</h2>
+    <p class="small">Plays MP3 returned by VoiceRSS. Get a free API key at <code>voicerss.org</code> and paste it below. If you leave the key empty, the browser TTS is used as fallback.</p>
 
     <textarea id="txt">Hello. This is a demo of a robotic voice generator. Edit the text, change pitch and speed, toggle robotic mode, then press Speak.</textarea>
 
     <div class="row">
-      <label>Voice
-        <select id="voiceSelect"></select>
+      <label style="flex:1">
+        API Key
+        <input id="apiKey" type="text" placeholder="Paste your VoiceRSS API key here" style="width:100%;margin-top:6px">
+        <div class="minor">Get a free key from voicerss.org (demo limited to 100 chars). 2</div>
       </label>
 
+      <label>
+        Voice name (optional)<br>
+        <input id="voiceName" type="text" placeholder="e.g. Linda, Amy, John" style="width:160px;margin-top:6px">
+      </label>
+    </div>
+
+    <div class="row">
       <label>Rate <span id="rateVal">1</span>
         <input id="rate" type="range" min="0.3" max="2" step="0.05" value="1">
+        <div class="minor">Server speed mapped to VoiceRSS's <code>r</code> (-10..10).</div>
       </label>
 
-      <label>Pitch <span id="pitchVal">1</span>
-        <input id="pitch" type="range" min="0" max="2" step="0.05" value="1">
+      <label>Pitch (client) <span id="pitchVal">1</span>
+        <input id="pitch" type="range" min="0.5" max="2" step="0.01" value="1">
+        <div class="minor">This sets the HTML audio <code>playbackRate</code> (will change perceived speed as well).</div>
       </label>
 
       <label><input id="robotic" type="checkbox"> Robotic mode</label>
@@ -46,13 +59,14 @@
     </div>
 
     <div class="row small" style="margin-top:8px">
-      <div>Tip: For more mechanical sound, try a low pitch (0.5) and fast rate (1.2–1.6) and enable Robotic mode.</div>
+      <div>Tip: For a metallic voice, try server rate &lt; 0 (slower), pitch ~0.8, and enable Robotic mode (small chunking).</div>
     </div>
   </div>
 
 <script>
-  const synth = window.speechSynthesis;
-  const voiceSelect = document.getElementById('voiceSelect');
+  const apiKeyEl = document.getElementById('apiKey');
+  const voiceNameEl = document.getElementById('voiceName');
+  const txt = document.getElementById('txt');
   const rate = document.getElementById('rate');
   const pitch = document.getElementById('pitch');
   const rateVal = document.getElementById('rateVal');
@@ -60,86 +74,159 @@
   const speakBtn = document.getElementById('speakBtn');
   const stopBtn = document.getElementById('stopBtn');
   const robotic = document.getElementById('robotic');
-  const txt = document.getElementById('txt');
-
-  let voices = [];
-
-  function populateVoices(){
-    voices = synth.getVoices();
-    if (!voices.length) return; // still empty, try later
-    voiceSelect.innerHTML = '';
-    voices.forEach((v, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = `${v.name} — ${v.lang}${v.default ? ' (default)' : ''}`;
-      if (v.default) opt.selected = true;
-      voiceSelect.appendChild(opt);
-    });
-  }
-
-  populateVoices();
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = populateVoices;
-  }
 
   rate.addEventListener('input', ()=> rateVal.textContent = rate.value);
   pitch.addEventListener('input', ()=> pitchVal.textContent = pitch.value);
 
-  let speaking = false;
+  let activeAudio = null;
+  let stopped = false;
 
-  function speakText(text) {
-    if(!text) return;
-    if (!voices.length) populateVoices(); // make sure voices are loaded
+  // Build VoiceRSS URL. VoiceRSS docs: key, hl (language), src (text), c=MP3, f=(format), r=(rate), v=(voice)
+  // API doc: https://www.voicerss.org/api/
+  function buildVoiceRSSUrl(text, rParam, voiceName){
+    const key = apiKeyEl.value.trim();
+    const params = new URLSearchParams();
+    params.set('key', key || ''); // empty => fallback not recommended for production
+    params.set('hl', 'en-us');
+    params.set('src', text);
+    params.set('c', 'MP3');
+    params.set('f', '44khz_16bit_stereo');
+    if (typeof rParam === 'number') params.set('r', String(rParam)); // -10..10
+    if (voiceName) params.set('v', voiceName);
+    return 'https://api.voicerss.org/?' + params.toString();
+  }
 
-    const voiceIndex = parseInt(voiceSelect.value) || 0;
-    const chosenVoice = voices[voiceIndex] || voices[0] || null;
-    const baseRate = parseFloat(rate.value) || 1;
-    const basePitch = parseFloat(pitch.value) || 1;
-    const isRobotic = robotic.checked;
-
-    if (isRobotic) {
-      const words = text.split(/\s+/);
-      const chunks = [];
-      for(let i=0;i<words.length;i+=2){
-        chunks.push(words.slice(i,i+2).join(' '));
+  // Play a single MP3 URL and return a promise that resolves on end or rejects on error
+  function playUrl(url, playbackRate=1){
+    return new Promise((resolve, reject) => {
+      stopped = false;
+      if (activeAudio){
+        try { activeAudio.pause(); activeAudio.src = ''; } catch(e){}
+        activeAudio = null;
       }
+      const a = new Audio();
+      activeAudio = a;
+      a.preload = 'auto';
+      a.src = url;
+      a.crossOrigin = 'anonymous'; // attempt CORS (may not be present on server) — not required for basic audio playback
+      a.playbackRate = playbackRate;
+      // play() returns a promise (may reject on autoplay policy, but user-click should allow playback)
+      a.play().then(()=> {
+        a.onended = ()=> { if(activeAudio===a) activeAudio=null; resolve(); };
+      }).catch(err => {
+        // If audio can't be played (network/CORS), reject with console info
+        console.error('Audio play error', err);
+        reject(err);
+      });
+      a.onerror = (e) => {
+        console.error('Audio loading error', e, 'src:', url);
+        reject(new Error('Audio loading/decoding failed'));
+      };
+    });
+  }
 
-      let i = 0;
-      speaking = true;
-      function playNext(){
-        if(!speaking) return;
-        if(i >= chunks.length){ speaking = false; return; }
-        const u = new SpeechSynthesisUtterance(chunks[i]);
-        if (chosenVoice) u.voice = chosenVoice;
-        u.pitch = basePitch * (i % 2 === 0 ? 0.85 : 1.15);
-        u.rate  = baseRate * (i % 2 === 0 ? 1.15 : 0.9);
-        u.onend = () => setTimeout(playNext, 60);
-        synth.speak(u);
-        i++;
+  // Split into short chunks (wordsPerChunk) and play sequentially (robotic mode)
+  async function playChunksSequentially(text, wordsPerChunk, rParam, voiceName, playbackRate){
+    const words = text.trim().split(/\s+/);
+    const chunks = [];
+    for (let i=0;i<words.length;i+=wordsPerChunk){
+      chunks.push(words.slice(i, i+wordsPerChunk).join(' '));
+    }
+    for (let i=0;i<chunks.length;i++){
+      if (stopped) break;
+      const url = buildVoiceRSSUrl(chunks[i], rParam, voiceName);
+      try {
+        await playUrl(url, playbackRate);
+        // short gap for choppy/robotic feel
+        await new Promise(res => setTimeout(res, 60));
+      } catch(err){
+        console.error('Chunk play failed', err);
+        throw err;
       }
-      playNext();
-    } else {
-      const u = new SpeechSynthesisUtterance(text);
-      if (chosenVoice) u.voice = chosenVoice;
-      u.rate = baseRate;
-      u.pitch = basePitch;
-      u.onend = ()=> speaking = false;
-      speaking = true;
-      synth.speak(u);
     }
   }
 
-  speakBtn.addEventListener('click', ()=>{
-    synth.cancel();
-    speaking = false;
-    setTimeout(()=> speakText(txt.value), 100);
+  function stopPlayback(){
+    stopped = true;
+    if (activeAudio){
+      try { activeAudio.pause(); activeAudio.src=''; } catch(e){}
+      activeAudio = null;
+    }
+    // Also cancel any speechSynthesis fallback
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  }
+
+  // Map your existing rate slider (0.3..2) to VoiceRSS r param (-10..10).
+  // We'll map by: r = round((rate-1) * 10) -> rate 0.3 => r ~= -7 ; rate 2 => r = 10
+  function mapRateToVoiceR(){
+    const baseRate = parseFloat(rate.value) || 1;
+    let r = Math.round((baseRate - 1) * 10);
+    r = Math.max(-10, Math.min(10, r));
+    return r;
+  }
+
+  speakBtn.addEventListener('click', async ()=>{
+    stopPlayback();
+    const text = txt.value.trim();
+    if (!text) return;
+
+    const key = apiKeyEl.value.trim();
+    const voiceName = voiceNameEl.value.trim() || '';
+    const playbackRate = parseFloat(pitch.value) || 1;
+    const rParam = mapRateToVoiceR();
+
+    // If no API key, fallback to browser's speechSynthesis (good for quick testing).
+    if (!key){
+      // Browser TTS fallback (previous behavior)
+      if (!('speechSynthesis' in window)) {
+        alert('No TTS available: no VoiceRSS API key and browser does not support speechSynthesis.');
+        return;
+      }
+      // Use same robotic chunking approach if requested
+      if (robotic.checked){
+        const words = text.split(/\s+/);
+        const chunks = [];
+        for (let i=0;i<words.length;i+=2) chunks.push(words.slice(i,i+2).join(' '));
+        for (let i=0;i<chunks.length;i++){
+          if (stopped) break;
+          const u = new SpeechSynthesisUtterance(chunks[i]);
+          u.rate = parseFloat(rate.value) || 1;
+          u.pitch = 1; // browser pitch control kept simple
+          try {
+            window.speechSynthesis.speak(u);
+            // wait until utterance ends
+            await new Promise(res => { u.onend = res; u.onerror = res; });
+            await new Promise(res => setTimeout(res, 60));
+          } catch(e){ console.error(e); }
+        }
+      } else {
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = parseFloat(rate.value) || 1;
+        u.pitch = parseFloat(pitch.value) || 1;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      }
+      return;
+    }
+
+    // With API key: call VoiceRSS
+    try {
+      if (robotic.checked){
+        // chunk size 2 words for choppy robotic feel
+        await playChunksSequentially(text, 2, rParam, voiceName, playbackRate);
+      } else {
+        const url = buildVoiceRSSUrl(text, rParam, voiceName);
+        await playUrl(url, playbackRate);
+      }
+    } catch(err){
+      console.error('VoiceRSS playback error:', err);
+      alert('Playback failed. Open console to see details. Make sure your API key is valid and you have not exceeded the free limit.');
+    }
   });
 
-  stopBtn.addEventListener('click', ()=>{
-    synth.cancel();
-    speaking = false;
-  });
+  stopBtn.addEventListener('click', stopPlayback);
 
+  // keyboard shortcut: Ctrl+Enter to speak
   document.addEventListener('keydown', (e)=>{
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) speakBtn.click();
   });
