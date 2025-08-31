@@ -1,46 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Robot Voice Generator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Robotic Voice Generator</title>
+  <meta name="description" content="Generate robotic voices using browser TTS with adjustable pitch and speed." />
+
+  <style>
+    /* ---------- CSS STYLING ---------- */
+    :root {
+      --fg:#0f172a;
+      --muted:#475569;
+      --bg:#f8fafc;
+      --card:#ffffff;
+      --accent:#2563eb;    /* Blue */
+      --accent-2:#22c55e;  /* Green */
+      --warn:#ef4444;      /* Red */
+    }
+
+    * { box-sizing:border-box }
+
+    body {
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Arial, sans-serif;
+      color: var(--fg);
+      background: linear-gradient(180deg, #f0f7ff, #fff);
+    }
+
+    header { padding:2rem 1rem; text-align:center }
+    h1 { margin:0 0 .25rem; font-size:clamp(1.5rem,2.6vw,2.2rem) }
+    .sub { color:var(--muted) }
+
+    .container { max-width:980px; margin:0 auto; padding:1rem }
+    .grid { display:grid; grid-template-columns:1fr; gap:1rem }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 420px 1fr }
+    }
+
+    .card {
+      background:var(--card);
+      border-radius:18px;
+      box-shadow:0 10px 30px rgba(2,6,23,.12);
+      padding:1rem;
+    }
+
+    label { font-weight:600; display:block; margin:.5rem 0 .25rem }
+    input[type="text"], textarea, select {
+      width:100%; padding:.7rem;
+      border:1px solid #e2e8f0; border-radius:12px;
+      font-size:1rem; background:#fff;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline:3px solid rgba(37,99,235,.15); border-color:var(--accent);
+    }
+    textarea { min-height:140px; resize:vertical }
+
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem }
+    .btns { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem }
+
+    button {
+      appearance:none;
+      border:0;
+      border-radius:12px;
+      padding:.7rem 1rem;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .primary { background:var(--accent); color:#fff }
+    .secondary { background:#e2e8f0 }
+    .ghost { background:transparent; border:2px dashed #e2e8f0 }
+
+    .preview {
+      padding:.75rem 1rem;
+      background:#f8fafc;
+      border:1px dashed #e2e8f0;
+      border-radius:12px;
+      margin-top:.75rem;
+      font-size:.9rem;
+    }
+
+    footer { padding:2rem 1rem; text-align:center; color:var(--muted) }
+    .small { font-size:.9rem }
+  </style>
 </head>
-<body style="font-family: Arial; text-align:center; padding:20px; background:#111; color:white;">
-  <h2>Robotic Voice Generator</h2>
 
-  <textarea id="textInput" rows="5" cols="50" placeholder="Enter text here"></textarea><br><br>
+<body>
+  <!-- HEADER -->
+  <header>
+    <h1>Robotic Voice Generator</h1>
+    <div class="sub">Enter text and generate robotic speech with adjustable rate and pitch.</div>
+  </header>
 
-  <label>Speed: 
-    <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
-  </label>
-  <span id="rateVal">1</span><br><br>
+  <div class="container grid">
+    <!-- LEFT SIDE: INPUTS -->
+    <section class="card">
+      <h2 style="margin-top:0">Input</h2>
 
-  <label>Pitch: 
-    <input type="range" id="pitch" min="0" max="2" step="0.1" value="1">
-  </label>
-  <span id="pitchVal">1</span><br><br>
+      <label for="text">Text to Speak</label>
+      <textarea id="text">Hello. I am a robotic voice generator.</textarea>
 
-  <button onclick="speakText()">🔊 Speak</button>
+      <div class="row">
+        <div>
+          <label for="rate">Rate</label>
+          <input id="rate" type="text" value="1" />
+        </div>
+        <div>
+          <label for="pitch">Pitch</label>
+          <input id="pitch" type="text" value="0.8" />
+        </div>
+      </div>
 
+      <label for="voiceSelect">Voice</label>
+      <select id="voiceSelect"></select>
+
+      <div class="btns">
+        <button class="primary" id="speakBtn">Speak</button>
+        <button class="secondary" id="stopBtn">Stop</button>
+      </div>
+
+      <p class="small muted">
+        Tip: For a more mechanical sound, use a <b>male voice</b> if available, set pitch between <b>0.6–0.9</b> and rate between <b>1.2–1.5</b>.
+      </p>
+    </section>
+
+    <!-- RIGHT SIDE: OUTPUT PREVIEW -->
+    <section class="card">
+      <h2 style="margin-top:0">Preview</h2>
+      <div id="preview" class="preview">Awaiting input...</div>
+    </section>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="small">Made with the Web Speech API. Fully client-side — works on GitHub Pages.</div>
+  </footer>
+
+  <!-- JAVASCRIPT -->
   <script>
     const synth = window.speechSynthesis;
-    const textInput = document.getElementById("textInput");
-    const rate = document.getElementById("rate");
-    const pitch = document.getElementById("pitch");
-    const rateVal = document.getElementById("rateVal");
-    const pitchVal = document.getElementById("pitchVal");
+    const textEl = document.getElementById('text');
+    const rateEl = document.getElementById('rate');
+    const pitchEl = document.getElementById('pitch');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const preview = document.getElementById('preview');
 
-    rate.oninput = () => rateVal.textContent = rate.value;
-    pitch.oninput = () => pitchVal.textContent = pitch.value;
+    function populateVoices() {
+      const voices = synth.getVoices();
+      voiceSelect.innerHTML = '';
+      voices.forEach((v, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${v.name} (${v.lang}) ${v.default ? ' — default' : ''}`;
+        voiceSelect.appendChild(opt);
+      });
 
-    function speakText() {
-      if (synth.speaking) {
-        synth.cancel(); // stop previous speech
-      }
-      const utter = new SpeechSynthesisUtterance(textInput.value || "Hello, I am a robot.");
-      utter.rate = parseFloat(rate.value);
-      utter.pitch = parseFloat(pitch.value);
-      synth.speak(utter);
+      // Try to select a male/robotic-sounding one if present
+      const preferred = voices.findIndex(v => /Male|Google UK English Male/i.test(v.name));
+      if (preferred >= 0) voiceSelect.value = preferred;
     }
+
+    populateVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    function speak() {
+      if (synth.speaking) synth.cancel();
+      const utter = new SpeechSynthesisUtterance(textEl.value || "Hello, I am a robot.");
+      const voices = synth.getVoices();
+      const v = voices[voiceSelect.value];
+      if (v) utter.voice = v;
+      utter.rate = parseFloat(rateEl.value) || 1;
+      utter.pitch = parseFloat(pitchEl.value) || 1;
+      synth.speak(utter);
+      preview.textContent = `Speaking with rate=${utter.rate}, pitch=${utter.pitch}, voice=${utter.voice ? utter.voice.name : "default"}`;
+    }
+
+    document.getElementById('speakBtn').addEventListener('click', speak);
+    document.getElementById('stopBtn').addEventListener('click', () => { synth.cancel(); preview.textContent = 'Stopped.'; });
   </script>
 </body>
 </html>
